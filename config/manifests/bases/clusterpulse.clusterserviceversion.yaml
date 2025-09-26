@@ -1,0 +1,357 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+  name: clusterpulse.v0.0.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: Manages the deployment and configuration of ClusterPulse monitoring
+        platform
+      displayName: ClusterPulse Instance
+      kind: ClusterPulse
+      name: clusterpulses.charts.clusterpulse.io
+      resources:
+      - kind: Deployment
+        name: ""
+        version: v1
+      - kind: Service
+        name: ""
+        version: v1
+      - kind: ConfigMap
+        name: ""
+        version: v1
+      - kind: Secret
+        name: ""
+        version: v1
+      - kind: ServiceAccount
+        name: ""
+        version: v1
+      - kind: Role
+        name: ""
+        version: v1
+      - kind: RoleBinding
+        name: ""
+        version: v1
+      - kind: Route
+        name: ""
+        version: v1
+      specDescriptors:
+      - description: Redis configuration for data storage
+        displayName: Redis Configuration
+        path: redis
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: API service configuration
+        displayName: API Configuration
+        path: api
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Cluster controller engine configuration
+        displayName: Cluster Engine Configuration
+        path: clusterEngine
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Frontend UI configuration
+        displayName: Frontend Configuration
+        path: frontend
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Policy engine configuration for access control
+        displayName: Policy Engine Configuration
+        path: policyEngine
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Enable Redis deployment for data storage
+        displayName: Enable Redis
+        path: redis.enabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: Enable API service deployment
+        displayName: Enable API
+        path: api.enabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: Number of API server replicas
+        displayName: API Replicas
+        path: api.replicas
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:podCount
+      - description: Docker image for API service
+        displayName: API Image
+        path: api.image
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Enable frontend UI deployment
+        displayName: Enable Frontend
+        path: frontend.enabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: Number of frontend replicas
+        displayName: Frontend Replicas
+        path: frontend.replicas
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:podCount
+      - description: Docker image for frontend UI
+        displayName: Frontend Image
+        path: frontend.image
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Number of cluster controller replicas
+        displayName: Cluster Controller Replicas
+        path: clusterEngine.replicas
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:podCount
+      - description: Docker image for cluster controller
+        displayName: Cluster Controller Image
+        path: clusterEngine.image
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Enable policy engine deployment
+        displayName: Enable Policy Engine
+        path: policyEngine.enabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: Number of policy engine replicas
+        displayName: Policy Engine Replicas
+        path: policyEngine.replicas
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:podCount
+      - description: Docker image for policy engine
+        displayName: Policy Engine Image
+        path: policyEngine.image
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      statusDescriptors:
+      - description: Current deployment phase
+        displayName: Phase
+        path: phase
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes.phase
+      version: v1alpha1
+    - description: Defines a connection to a monitored Kubernetes/OpenShift cluster
+      displayName: Cluster Connection
+      kind: ClusterConnection
+      name: clusterconnections.clusterpulse.io
+      resources:
+      - kind: Secret
+        name: ""
+        version: v1
+      specDescriptors:
+      - description: Reference to secret containing cluster credentials
+        displayName: Credentials Configuration
+        path: credentialsRef
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Monitoring and health check configuration
+        displayName: Monitoring Configuration
+        path: monitoring
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Human-friendly name for the cluster
+        displayName: Display Name
+        path: displayName
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Cluster API endpoint URL
+        displayName: API Endpoint
+        path: endpoint
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Name of the secret containing credentials
+        displayName: Credentials Secret
+        path: credentialsRef.name
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:Secret
+      - description: Reconciliation interval in seconds
+        displayName: Check Interval
+        path: monitoring.interval
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:number
+      - description: Connection timeout in seconds
+        displayName: Connection Timeout
+        path: monitoring.timeout
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:number
+      statusDescriptors:
+      - description: Current connection status
+        displayName: Connection Status
+        path: phase
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes.phase
+      - description: Cluster health status
+        displayName: Health
+        path: health
+        x-descriptors:
+        - urn:alm:descriptor:text
+      version: v1alpha1
+    - description: Defines fine-grained access control policies for cluster monitoring
+      displayName: Monitor Access Policy
+      kind: MonitorAccessPolicy
+      name: monitoraccesspolicies.clusterpulse.io
+      resources:
+      - kind: ConfigMap
+        name: ""
+        version: v1
+      specDescriptors:
+      - description: Access control configuration
+        displayName: Access Configuration
+        path: access
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Identity and priority configuration
+        displayName: Identity Configuration
+        path: identity
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Operational aspects configuration
+        displayName: Operations Configuration
+        path: operations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Scope and cluster rules configuration
+        displayName: Scope Configuration
+        path: scope
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Policy priority (higher values take precedence)
+        displayName: Priority
+        path: identity.priority
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:number
+      - description: List of users this policy applies to
+        displayName: Users
+        path: identity.subjects.users
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: List of groups this policy applies to
+        displayName: Groups
+        path: identity.subjects.groups
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Allow or Deny access
+        displayName: Effect
+        path: access.effect
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:select:Allow
+        - urn:alm:descriptor:com.tectonic.ui:select:Deny
+      - description: Whether this policy is active
+        displayName: Enabled
+        path: access.enabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: Default access for clusters not matching any rule
+        displayName: Default Cluster Access
+        path: scope.clusters.default
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:select:allow
+        - urn:alm:descriptor:com.tectonic.ui:select:deny
+        - urn:alm:descriptor:com.tectonic.ui:select:none
+      - description: Log all access attempts using this policy
+        displayName: Log Access
+        path: operations.audit.logAccess
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      statusDescriptors:
+      - description: Current policy state
+        displayName: State
+        path: state
+        x-descriptors:
+        - urn:alm:descriptor:text
+      version: v1alpha1
+    - description: Defines a connection to a container registry for monitoring
+      displayName: Registry Connection
+      kind: RegistryConnection
+      name: registryconnections.clusterpulse.io
+      resources:
+      - kind: Secret
+        name: ""
+        version: v1
+      specDescriptors:
+      - description: Human-friendly name for the registry
+        displayName: Display Name
+        path: displayName
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Registry endpoint URL
+        displayName: Registry Endpoint
+        path: endpoint
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Allow insecure HTTP connections
+        displayName: Allow Insecure
+        path: insecure
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: Skip TLS certificate verification
+        displayName: Skip TLS Verify
+        path: skipTLSVerify
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: Health check interval in seconds
+        displayName: Check Interval
+        path: monitoring.interval
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:number
+      - description: Paths to check for registry health
+        displayName: Health Check Paths
+        path: healthCheckPaths
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Labels for registry categorization
+        displayName: Labels
+        path: labels
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Registry monitoring configuration
+        displayName: Monitoring Configuration
+        path: monitoring
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      statusDescriptors:
+      - description: Whether registry is reachable
+        displayName: Available
+        path: available
+        x-descriptors:
+        - urn:alm:descriptor:text
+      - description: Registry health status
+        displayName: Health
+        path: health
+        x-descriptors:
+        - urn:alm:descriptor:text
+      version: v1alpha1
+  description: Operator designed to manage multi OpenShift environments through GitOps
+  displayName: ClusterPulse
+  icon:
+  - base64data: PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAyNTAgMTAwMCAxMDAwIj4KICA8ZGVmcz4KICAgIDxzdHlsZT4KICAgICAgLmNscy0xIHsKICAgICAgICBmaWxsOiAjZmZmOwogICAgICB9CgogICAgICAuY2xzLTIgewogICAgICAgIGZpbGw6ICMwMDQ3OGY7CiAgICAgIH0KICAgIDwvc3R5bGU+CiAgPC9kZWZzPgogIDxjaXJjbGUgY2xhc3M9ImNscy0xIiBjeD0iNDk5Ljk5IiBjeT0iNzUwIiByPSI0OTMiLz4KICA8Zz4KICAgIDxwYXRoIGQ9Ik00OTkuOTgsMTE3Mi40NGMtMjE3LjI3LDAtMzk2LjczLTE2NC44OS00MTkuODgtMzc2LjFoLTMxLjQ0YzEwLjQ1LDEwMy42Nyw1NS44NywxOTkuNzgsMTMwLjU0LDI3NC40NSw4NS42OSw4NS42OSwxOTkuNjEsMTMyLjg4LDMyMC43OSwxMzIuODhzMjM1LjEtNDcuMTksMzIwLjc5LTEzMi44OGM3NC42Ny03NC42NywxMjAuMDktMTcwLjc4LDEzMC41NC0yNzQuNDVoLTMxLjQ0Yy0yMy4xNSwyMTEuMjEtMjAyLjYxLDM3Ni4xLTQxOS44OSwzNzYuMVoiLz4KICAgIDxwYXRoIGQ9Ik00OTkuOTgsMzI3LjU2YzIyNi44OSwwLDQxMi41NCwxNzkuOCw0MjIuMDMsNDA0LjM5aDMxLjI2Yy00LjQ1LTExNC40MS01MS4wNy0yMjEuMzMtMTMyLjQ5LTMwMi43NS04NS42OS04NS42OS0xOTkuNjEtMTMyLjg3LTMyMC43OS0xMzIuODdzLTIzNS4xLDQ3LjE5LTMyMC43OSwxMzIuODhjLTgxLjQyLDgxLjQyLTEyOC4wNSwxODguMzQtMTMyLjQ5LDMwMi43NWgzMS4yNmM5LjQ5LTIyNC41OSwxOTUuMTQtNDA0LjM5LDQyMi4wMy00MDQuMzlaIi8+CiAgICA8cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik05OTIuOTksNzQ4Ljk0Yy4xLDExLjg3LS4xOSwyMy4xNi0uODYsMzAuNDJoLTE4OC4wOXMtNTYuMzcsMTg3LjktNTYuMzcsMTg3LjlsLTE0Ni4wMy00MzIuNTItMjA2LjIxLDU0OS43NS0xMjUtNDAxLjE1LTQzLjIsOTYuMDJINy44NWMtLjY0LTkuOTgtLjktMjAuMzYtLjg2LTMwLjQyaDE5MC42czgwLjAzLTE3Ny43OSw4MC4wMy0xNzcuNzlsMTIxLjQ5LDM4OS44NSwyMDQuNjEtNTQ1LjQ3LDE0MS41NSw0MTkuMzMsMjUuODEtODUuOTFoMjIxLjlaIi8+CiAgPC9nPgo8L3N2Zz4K
+    mediatype: image/svg+xml
+  install:
+    spec:
+      deployments: null
+    strategy: ""
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - clusterpulse
+  links:
+  - name: ClusterPulse
+    url: https://github.com/ClusterPulse/operator
+  maintainers:
+  - email: asmoore@redhat.com
+    name: Asa Moore
+  maturity: alpha
+  minKubeVersion: 1.23.0
+  provider:
+    name: ClusterPulse
+  version: 0.0.0

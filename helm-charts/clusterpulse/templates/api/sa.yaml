@@ -1,0 +1,11 @@
+{{- if ((.Values.api).enabled) | default true }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Release.Name }}-api
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: clusterpulse
+    component: api
+{{- end }}
+

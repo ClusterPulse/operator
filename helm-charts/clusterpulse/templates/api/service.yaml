@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-api
+  labels:
+    app: clusterpulse
+    component: api
+  {{- if (((.Values.api).service).annotations) }}
+  annotations:
+    {{- toYaml .Values.api.service.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ (((.Values.api).service).type) | default "ClusterIP" }}
+  ports:
+  - name: http
+    port: {{ (((.Values.api).service).port) | default 8080 }}
+    targetPort: {{ (((.Values.api).server).port) | default 8080 }}
+    protocol: TCP
+    {{- if and (eq ((((.Values.api).service).type) | default "ClusterIP") "NodePort") (((.Values.api).service).nodePort) }}
+    nodePort: {{ .Values.api.service.nodePort }}
+    {{- end }}
+  selector:
+    app: clusterpulse
+    component: api
+  {{- if (((.Values.api).service).sessionAffinity) }}
+  sessionAffinity: {{ .Values.api.service.sessionAffinity }}
+  {{- if (((.Values.api).service).sessionAffinityConfig) }}
+  sessionAffinityConfig:
+    {{- toYaml .Values.api.service.sessionAffinityConfig | nindent 4 }}
+  {{- end }}
+  {{- end }}

@@ -1,0 +1,27 @@
+{{- if (((.Values.frontend).route).enabled) | default true }}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ .Release.Name }}-ui
+spec:
+  {{- if (((.Values.frontend).route).host) }}
+  host: {{ .Values.frontend.route.host }}
+  {{- end }}
+  to:
+    kind: Service
+    name: {{ .Release.Name }}-ui
+  port:
+    targetPort: https
+  tls:
+    termination: {{ ((((.Values.frontend).route).tls).termination) | default "reencrypt" }}
+    insecureEdgeTerminationPolicy: {{ ((((.Values.frontend).route).tls).insecureEdgeTerminationPolicy) | default "Redirect" }}
+    {{- if ((((.Values.frontend).route).tls).certificate) }}
+    certificate: {{ .Values.frontend.route.tls.certificate }}
+    {{- end }}
+    {{- if ((((.Values.frontend).route).tls).key) }}
+    key: {{ .Values.frontend.route.tls.key }}
+    {{- end }}
+    {{- if ((((.Values.frontend).route).tls).caCertificate) }}
+    caCertificate: {{ .Values.frontend.route.tls.caCertificate }}
+    {{- end }}
+{{- end }}

@@ -1,0 +1,63 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Release.Name }}-oauth-sidecar-role
+  namespace: {{ .Release.Namespace }}
+rules:
+  # Token review permissions for authentication
+  - apiGroups:
+      - authentication.k8s.io
+    resources:
+      - tokenreviews
+    verbs:
+      - create
+  
+  # Subject access review permissions for authorization
+  - apiGroups:
+      - authorization.k8s.io
+    resources:
+      - subjectaccessreviews
+    verbs:
+      - create
+  
+  # Additional permissions often needed by OAuth sidecars
+  # User and group information (optional but commonly needed)
+  - apiGroups:
+      - user.openshift.io
+    resources:
+      - users
+      - groups
+    verbs:
+      - get
+      - list
+      - watch
+  
+  # OAuth client permissions (if using OpenShift OAuth)
+  - apiGroups:
+      - oauth.openshift.io
+    resources:
+      - oauthaccesstokens
+      - oauthauthorizetokens
+    verbs:
+      - get
+      - list
+      - watch
+      - delete  # For token revocation
+  
+  # Service account token permissions
+  - apiGroups:
+      - ""
+    resources:
+      - serviceaccounts
+    verbs:
+      - get
+      - list
+  
+  # Namespace permissions (for namespace-scoped authorization checks)
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    verbs:
+      - get
+      - list

@@ -1,0 +1,62 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role 
+metadata:
+  name: {{ .Release.Name }}-cluster-controller
+rules:
+- apiGroups:
+  - clusterpulse.io
+  resources:
+  - clusterconnections
+  - registryconnections
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+
+# Permissions to update ClusterConnection status
+- apiGroups:
+  - clusterpulse.io
+  resources:
+  - clusterconnections/status
+  - registryconnections/status
+  verbs:
+  - get
+  - update
+  - patch
+
+# Permissions to read secrets (for cluster credentials)
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+
+# Permissions for kopf to store its state
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+
+# Permissions for kopf to store operator state (optional but recommended)
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete

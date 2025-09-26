@@ -1,0 +1,17 @@
+---
+# service-patch.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: clusterpulse-ui-tls
+  name: {{ .Release.Name }}-ui
+spec:
+  selector:
+    component: ui
+  ports:
+  - name: https
+    port: 8443
+    targetPort: 8443
+    protocol: TCP
+

@@ -1,0 +1,44 @@
+apiVersion: clusterpulse.io/v1alpha1
+kind: MonitorAccessPolicy
+metadata:
+  name: example
+spec:
+  access:
+    effect: Allow
+    enabled: true
+  identity:
+    priority: 100
+    subjects:
+      groups:
+        - default-group
+      users:
+        - default-user
+  operations:
+    audit:
+      logAccess: false
+      requireReason: false
+  scope:
+    clusters:
+      default: none
+      rules:
+        - permissions:
+            view: true
+            viewAuditInfo: true
+            viewCosts: true
+            viewMetadata: true
+            viewMetrics: true
+            viewSecrets: true
+            viewSensitive: true
+          resources:
+            namespaces:
+              visibility: all
+            nodes:
+              filters:
+                hideMasters: false
+              visibility: all
+            operators:
+              visibility: none
+            pods:
+              visibility: all
+          selector:
+            matchPattern: .*

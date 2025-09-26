@@ -1,0 +1,12 @@
+apiVersion: clusterpulse.io/v1alpha1
+kind: ClusterConnection
+metadata:
+  name: example-cluster
+spec:
+  displayName: Example Production Cluster
+  endpoint: https://api.example.openshift.com:6443
+  credentialsRef:
+    name: cluster-credentials
+  monitoring:
+    interval: 30
+    timeout: 10

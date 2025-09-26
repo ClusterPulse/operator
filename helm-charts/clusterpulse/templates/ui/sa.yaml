@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Release.Name }}-ui
+  labels:
+    app: ui
+  annotations:
+    serviceaccounts.openshift.io/oauth-redirectreference.primary: {{ printf "{\"kind\":\"OAuthRedirectReference\",\"apiVersion\":\"v1\",\"reference\":{\"kind\":\"Route\",\"name\":\"%s-ui\"}}" .Release.Name | quote }}

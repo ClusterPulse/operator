@@ -1,0 +1,31 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Release.Name }}-policy-controller
+  namespace: {{ .Release.Namespace }}
+rules:
+- apiGroups: ["clusterpulse.io"]
+  resources: ["monitoraccesspolicies"]
+  verbs: ["get", "list", "watch", "patch"]
+- apiGroups: ["clusterpulse.io"]
+  resources: ["monitoraccesspolicies/status"]
+  verbs: ["get", "update", "patch"]
+
+# OpenShift user/group resolution
+- apiGroups: ["user.openshift.io"]
+  resources: ["users"]
+  verbs: ["get"]
+
+- apiGroups: ["user.openshift.io"]
+  resources: ["groups"]
+  verbs: ["get", "list"]
+
+# Events for Kopf
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["create", "patch"]
+
+# Kopf peerings (for leader election if running multiple replicas)
+- apiGroups: ["kopf.dev"]
+  resources: ["clusterkopfpeerings"]
+  verbs: ["get", "list", "watch", "patch"]

@@ -1,0 +1,139 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-cluster-controller
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: clusterpulse
+    component: cluster-controller
+spec:
+  replicas: {{ ((.Values.clusterEngine).replicas) | default 1 }}
+  selector:
+    matchLabels:
+      app: clusterpulse
+      component: cluster-controller
+  template:
+    metadata:
+      labels:
+        app: clusterpulse
+        component: cluster-controller
+    spec:
+      serviceAccountName: {{ .Release.Name }}-cluster-controller
+      containers:
+      - name: controller
+        image: {{ ((.Values.clusterEngine).image) }}
+        imagePullPolicy: {{ ((.Values.clusterEngine).imagePullPolicy) | default "Always" }}
+        env:
+        # Operator settings
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        
+        # Redis settings
+        - name: REDIS_HOST
+          value: {{ (((.Values.clusterEngine).redis).host) | default (printf "%s-redis-master" .Release.Name) | quote }}
+        - name: REDIS_PORT
+          value: {{ (((.Values.clusterEngine).redis).port) | default "6379" | quote }}
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ (((.Values.clusterEngine).redis).passwordSecret) | default (printf "%s-redis" .Release.Name) }}
+              key: {{ (((.Values.clusterEngine).redis).passwordKey) | default "redis-password" }}
+        - name: REDIS_DB
+          value: {{ (((.Values.clusterEngine).redis).db) | default "0" | quote }}
+        
+        # Timing configuration (in seconds)
+        - name: RECONCILIATION_INTERVAL
+          value: {{ (((.Values.clusterEngine).timing).reconciliationInterval) | default "30" | quote }}
+        - name: NODE_METRICS_INTERVAL
+          value: {{ (((.Values.clusterEngine).timing).nodeMetricsInterval) | default "15" | quote }}
+        - name: OPERATOR_SCAN_INTERVAL
+          value: {{ (((.Values.clusterEngine).timing).operatorScanInterval) | default "300" | quote }}
+        - name: FULL_SCAN_INTERVAL
+          value: {{ (((.Values.clusterEngine).timing).fullScanInterval) | default "300" | quote }}
+        - name: CACHE_TTL
+          value: {{ (((.Values.clusterEngine).timing).cacheTTL) | default "600" | quote }}
+        - name: METRICS_RETENTION
+          value: {{ (((.Values.clusterEngine).timing).metricsRetention) | default "3600" | quote }}
+        - name: CONNECT_TIMEOUT
+          value: {{ (((.Values.clusterEngine).timing).connectTimeout) | default "10" | quote }}
+        
+        # Resource thresholds
+        - name: CPU_WARNING_THRESHOLD
+          value: {{ (((.Values.clusterEngine).thresholds).cpuWarning) | default "85" | quote }}
+        - name: CPU_CRITICAL_THRESHOLD
+          value: {{ (((.Values.clusterEngine).thresholds).cpuCritical) | default "90" | quote }}
+        - name: MEMORY_WARNING_THRESHOLD
+          value: {{ (((.Values.clusterEngine).thresholds).memoryWarning) | default "85" | quote }}
+        - name: MEMORY_CRITICAL_THRESHOLD
+          value: {{ (((.Values.clusterEngine).thresholds).memoryCritical) | default "90" | quote }}
+        - name: NODE_UNHEALTHY_THRESHOLD
+          value: {{ (((.Values.clusterEngine).thresholds).nodeUnhealthy) | default "0.5" | quote }}
+        
+        # Logging
+        - name: LOG_LEVEL
+          value: {{ (((.Values.clusterEngine).logging).level) | default "INFO" | quote }}
+        
+        {{- if (.Values.clusterEngine).extraEnv }}
+        {{- toYaml (.Values.clusterEngine).extraEnv | nindent 8 }}
+        {{- end }}
+        
+        ports:
+        - name: metrics
+          containerPort: 8080
+          protocol: TCP
+        - name: health
+          containerPort: 8081
+          protocol: TCP
+        
+        resources:
+          requests:
+            memory: {{ ((((.Values.clusterEngine).resources).requests).memory) | default "256Mi" }}
+            cpu: {{ ((((.Values.clusterEngine).resources).requests).cpu) | default "100m" }}
+          limits:
+            memory: {{ ((((.Values.clusterEngine).resources).limits).memory) | default "1Gi" }}
+            cpu: {{ ((((.Values.clusterEngine).resources).limits).cpu) | default "1000m" }}
+        
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: health
+          initialDelaySeconds: {{ ((((.Values.clusterEngine).probes).liveness).initialDelaySeconds) | default 10 }}
+          periodSeconds: {{ ((((.Values.clusterEngine).probes).liveness).periodSeconds) | default 30 }}
+          timeoutSeconds: {{ ((((.Values.clusterEngine).probes).liveness).timeoutSeconds) | default 5 }}
+          failureThreshold: {{ ((((.Values.clusterEngine).probes).liveness).failureThreshold) | default 3 }}
+        
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: health
+          initialDelaySeconds: {{ ((((.Values.clusterEngine).probes).readiness).initialDelaySeconds) | default 5 }}
+          periodSeconds: {{ ((((.Values.clusterEngine).probes).readiness).periodSeconds) | default 10 }}
+          timeoutSeconds: {{ ((((.Values.clusterEngine).probes).readiness).timeoutSeconds) | default 5 }}
+          failureThreshold: {{ ((((.Values.clusterEngine).probes).readiness).failureThreshold) | default 3 }}
+
+        {{- if (.Values.clusterEngine).volumeMounts }}
+        volumeMounts:
+        {{- toYaml (.Values.clusterEngine).volumeMounts | nindent 8 }}
+        {{- end }}
+      
+      {{- if (.Values.clusterEngine).nodeSelector }}
+      nodeSelector:
+        {{- toYaml (.Values.clusterEngine).nodeSelector | nindent 8 }}
+      {{- end }}
+      
+      {{- if (.Values.clusterEngine).tolerations }}
+      tolerations:
+        {{- toYaml (.Values.clusterEngine).tolerations | nindent 8 }}
+      {{- end }}
+      
+      {{- if (.Values.clusterEngine).affinity }}
+      affinity:
+        {{- toYaml (.Values.clusterEngine).affinity | nindent 8 }}
+      {{- end }}
+      
+      {{- if (.Values.clusterEngine).volumes }}
+      volumes:
+        {{- toYaml (.Values.clusterEngine).volumes | nindent 8 }}
+      {{- end }}

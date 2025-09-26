@@ -1,0 +1,102 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: clusterconnections.clusterpulse.io
+spec:
+  group: clusterpulse.io
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            required:
+            - endpoint
+            - credentialsRef
+            properties:
+              displayName:
+                type: string
+                description: Human-friendly name for the cluster
+              endpoint:
+                type: string
+                description: Cluster API endpoint URL
+                pattern: '^https://.*'
+              credentialsRef:
+                type: object
+                description: Reference to secret containing credentials
+                required:
+                - name
+                properties:
+                  name:
+                    type: string
+                    description: Name of the secret
+                  namespace:
+                    type: string
+                    description: Namespace of the secret (defaults to same namespace)
+              labels:
+                type: object
+                description: Labels for cluster categorization
+                additionalProperties:
+                  type: string
+              monitoring:
+                type: object
+                description: Monitoring configuration
+                properties:
+                  interval:
+                    type: integer
+                    description: Reconciliation interval in seconds
+                    minimum: 30
+                    default: 30
+                  timeout:
+                    type: integer
+                    description: Connection timeout in seconds
+                    minimum: 5
+                    default: 10
+          status:
+            type: object
+            properties:
+              phase:
+                type: string
+                enum: ["Connected", "Disconnected", "Error", "Unknown"]
+              lastSyncTime:
+                type: string
+                format: date-time
+              health:
+                type: string
+                enum: ["healthy", "degraded", "unhealthy", "unknown"]
+              message:
+                type: string
+              nodes:
+                type: integer
+              namespaces:
+                type: integer
+    subresources:
+      status: {}
+    additionalPrinterColumns:
+    - name: Display Name
+      type: string
+      jsonPath: .spec.displayName
+    - name: Endpoint
+      type: string
+      jsonPath: .spec.endpoint
+    - name: Status
+      type: string
+      jsonPath: .status.phase
+    - name: Health
+      type: string
+      jsonPath: .status.health
+    - name: Age
+      type: date
+      jsonPath: .metadata.creationTimestamp
+  scope: Namespaced
+  names:
+    plural: clusterconnections
+    singular: clusterconnection
+    kind: ClusterConnection
+    shortNames:
+    - cc
+

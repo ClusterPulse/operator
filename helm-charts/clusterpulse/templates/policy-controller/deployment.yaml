@@ -1,0 +1,128 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-policy-controller
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: clusterpulse
+    component: policy-controller
+spec:
+  replicas: {{ ((.Values.policyEngine).replicas) | default 1 }}
+  selector:
+    matchLabels:
+      app: clusterpulse
+      component: policy-controller
+  template:
+    metadata:
+      labels:
+        app: clusterpulse
+        component: policy-controller
+    spec:
+      serviceAccountName: {{ .Release.Name }}-policy-controller
+      containers:
+      - name: controller
+        image: {{ ((.Values.policyEngine).image) }}
+        imagePullPolicy: {{ ((.Values.policyEngine).imagePullPolicy) | default "Always" }}
+        env:
+        # Namespace configuration
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        
+        # Redis configuration
+        - name: REDIS_HOST
+          value: {{ (((.Values.policyEngine).redis).host) | default (printf "%s-redis-master" .Release.Name) | quote }}
+        - name: REDIS_PORT
+          value: {{ (((.Values.policyEngine).redis).port) | default "6379" | quote }}
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ (((.Values.policyEngine).redis).passwordSecret) | default (printf "%s-redis" .Release.Name) }}
+              key: {{ (((.Values.policyEngine).redis).passwordKey) | default "redis-password" }}
+        - name: REDIS_DB
+          value: {{ (((.Values.policyEngine).redis).db) | default "0" | quote }}
+        
+        # Cache configuration
+        - name: POLICY_CACHE_TTL
+          value: {{ (((.Values.policyEngine).cache).policyCacheTTL) | default 300 | quote }}
+        - name: GROUP_CACHE_TTL
+          value: {{ (((.Values.policyEngine).cache).groupCacheTTL) | default 300 | quote }}
+        
+        # Limits configuration
+        - name: MAX_POLICIES_PER_USER
+          value: {{ (((.Values.policyEngine).limits).maxPoliciesPerUser) | default 100 | quote }}
+        - name: POLICY_VALIDATION_INTERVAL
+          value: {{ (((.Values.policyEngine).limits).policyValidationInterval) | default 300 | quote }}
+        
+        # Batch processing configuration
+        - name: REDIS_SCAN_BATCH_SIZE
+          value: {{ (((.Values.policyEngine).batch).redisScanBatchSize) | default 100 | quote }}
+        - name: REDIS_PIPELINE_BATCH_SIZE
+          value: {{ (((.Values.policyEngine).batch).redisPipelineBatchSize) | default 1000 | quote }}
+        - name: CACHE_CLEAR_BATCH_SIZE
+          value: {{ (((.Values.policyEngine).batch).cacheClearBatchSize) | default 500 | quote }}
+        
+        # Logging configuration
+        - name: LOG_LEVEL
+          value: {{ (((.Values.policyEngine).logging).level) | default "INFO" | quote }}
+        
+        {{- if (.Values.policyEngine).extraEnv }}
+        {{- toYaml (.Values.policyEngine).extraEnv | nindent 8 }}
+        {{- end }}
+        
+        ports:
+        - name: health
+          containerPort: 8080
+          protocol: TCP
+        
+        resources:
+          requests:
+            memory: {{ ((((.Values.policyEngine).resources).requests).memory) | default "128Mi" }}
+            cpu: {{ ((((.Values.policyEngine).resources).requests).cpu) | default "50m" }}
+          limits:
+            memory: {{ ((((.Values.policyEngine).resources).limits).memory) | default "512Mi" }}
+            cpu: {{ ((((.Values.policyEngine).resources).limits).cpu) | default "500m" }}
+        
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: health
+          initialDelaySeconds: {{ ((((.Values.policyEngine).probes).liveness).initialDelaySeconds) | default 10 }}
+          periodSeconds: {{ ((((.Values.policyEngine).probes).liveness).periodSeconds) | default 30 }}
+          timeoutSeconds: {{ ((((.Values.policyEngine).probes).liveness).timeoutSeconds) | default 5 }}
+          failureThreshold: {{ ((((.Values.policyEngine).probes).liveness).failureThreshold) | default 3 }}
+        
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: health
+          initialDelaySeconds: {{ ((((.Values.policyEngine).probes).readiness).initialDelaySeconds) | default 5 }}
+          periodSeconds: {{ ((((.Values.policyEngine).probes).readiness).periodSeconds) | default 10 }}
+          timeoutSeconds: {{ ((((.Values.policyEngine).probes).readiness).timeoutSeconds) | default 5 }}
+          failureThreshold: {{ ((((.Values.policyEngine).probes).readiness).failureThreshold) | default 3 }}
+        
+        {{- if (.Values.policyEngine).volumeMounts }}
+        volumeMounts:
+        {{- toYaml (.Values.policyEngine).volumeMounts | nindent 8 }}
+        {{- end }}
+      
+      {{- if (.Values.policyEngine).nodeSelector }}
+      nodeSelector:
+        {{- toYaml (.Values.policyEngine).nodeSelector | nindent 8 }}
+      {{- end }}
+      
+      {{- if (.Values.policyEngine).tolerations }}
+      tolerations:
+        {{- toYaml (.Values.policyEngine).tolerations | nindent 8 }}
+      {{- end }}
+      
+      {{- if (.Values.policyEngine).affinity }}
+      affinity:
+        {{- toYaml (.Values.policyEngine).affinity | nindent 8 }}
+      {{- end }}
+      
+      {{- if (.Values.policyEngine).volumes }}
+      volumes:
+        {{- toYaml (.Values.policyEngine).volumes | nindent 8 }}
+      {{- end }}

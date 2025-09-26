@@ -1,0 +1,7 @@
+## Append samples of your project ##
+resources:
+- charts_v1alpha1_clusterpulse.yaml
+- clusterpulse_v1alpha1_clusterconnection.yaml
+- clusterpulse_v1alpha1_monitoraccesspolicy.yaml
+- clusterpulse_v1alpha1_registryconnection.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples

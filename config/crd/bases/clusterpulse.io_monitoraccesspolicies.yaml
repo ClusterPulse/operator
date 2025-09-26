@@ -1,0 +1,364 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: monitoraccesspolicies.clusterpulse.io
+spec:
+  group: clusterpulse.io
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        required:
+        - spec
+        properties:
+          spec:
+            type: object
+            required:
+            - identity
+            - access
+            - scope
+            properties:
+              # WHO - Identity & Priority
+              identity:
+                type: object
+                required:
+                - subjects
+                properties:
+                  priority:
+                    type: integer
+                    default: 100
+                    minimum: 1
+                    maximum: 10000
+                    description: Higher priority policies are evaluated first
+                    
+                  subjects:
+                    type: object
+                    minProperties: 1
+                    properties:
+                      users:
+                        type: array
+                        items:
+                          type: string
+                          pattern: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?$'
+                        description: List of usernames or email addresses
+                      groups:
+                        type: array
+                        items:
+                          type: string
+                        description: List of group names
+                      serviceAccounts:
+                        type: array
+                        items:
+                          type: object
+                          required:
+                          - name
+                          properties:
+                            name:
+                              type: string
+                              description: Service account name
+                            namespace:
+                              type: string
+                              default: default
+                              description: Service account namespace
+              
+              # WHAT - Core access control
+              access:
+                type: object
+                required:
+                - effect
+                properties:
+                  effect:
+                    type: string
+                    enum: ["Allow", "Deny"]
+                    description: Allow or Deny access
+                    
+                  enabled:
+                    type: boolean
+                    default: true
+                    description: Whether this policy is active
+              
+              # WHERE - Scope of access
+              scope:
+                type: object
+                required:
+                - clusters
+                properties:
+                  clusters:
+                    type: object
+                    properties:
+                      default:
+                        type: string
+                        enum: ["allow", "deny", "none"]
+                        default: "none"
+                        description: Default access for clusters not matching any rule
+                        
+                      rules:
+                        type: array
+                        items:
+                          type: object
+                          required:
+                          - selector
+                          properties:
+                            selector:
+                              type: object
+                              minProperties: 1
+                              properties:
+                                matchNames:
+                                  type: array
+                                  items:
+                                    type: string
+                                  description: Exact cluster names or patterns with wildcards
+                                matchLabels:
+                                  type: object
+                                  additionalProperties:
+                                    type: string
+                                  description: Label selector for clusters
+                                matchPattern:
+                                  type: string
+                                  description: Regex pattern for cluster names
+                            
+                            permissions:
+                              type: object
+                              properties:
+                                view:
+                                  type: boolean
+                                  default: true
+                                  description: Can view basic cluster information
+                                viewMetrics:
+                                  type: boolean
+                                  default: false
+                                  description: Can view cluster-wide metrics (CPU, memory, pod counts)
+                                viewSensitive:
+                                  type: boolean
+                                  default: false
+                                  description: Can view sensitive information
+                                viewCosts:
+                                  type: boolean
+                                  default: false
+                                  description: Can view cost metrics
+                                viewSecrets:
+                                  type: boolean
+                                  default: false
+                                  description: Can view secret references
+                                viewMetadata:
+                                  type: boolean
+                                  default: false
+                                  description: Can view metadata about filtered resources (total counts, what's hidden)
+                                viewAuditInfo:
+                                  type: boolean
+                                  default: false
+                                  description: Can view audit and policy information
+                            
+                            resources:
+                              type: object
+                              properties:
+                                nodes:
+                                  type: object
+                                  properties:
+                                    visibility:
+                                      type: string
+                                      enum: ["all", "none", "filtered"]
+                                      default: "all"
+                                      description: Node visibility level
+                                    filters:
+                                      type: object
+                                      properties:
+                                        labelSelector:
+                                          type: object
+                                          additionalProperties:
+                                            type: string
+                                          description: Label selector for nodes
+                                        hideMasters:
+                                          type: boolean
+                                          default: false
+                                          description: Hide master/control plane nodes
+                                        hideByLabels:
+                                          type: object
+                                          additionalProperties:
+                                            type: string
+                                          description: Hide nodes with specific labels
+                                
+                                operators:
+                                  type: object
+                                  properties:
+                                    visibility:
+                                      type: string
+                                      enum: ["all", "none", "filtered"]
+                                      default: "all"
+                                      description: Operator visibility level
+                                    filters:
+                                      type: object
+                                      properties:
+                                        allowedNamespaces:
+                                          type: array
+                                          items:
+                                            type: string
+                                          description: Namespaces where operators are visible
+                                        deniedNamespaces:
+                                          type: array
+                                          items:
+                                            type: string
+                                          description: Namespaces where operators are hidden
+                                        allowedNames:
+                                          type: array
+                                          items:
+                                            type: string
+                                          description: Specific operator names to show
+                                        deniedNames:
+                                          type: array
+                                          items:
+                                            type: string
+                                          description: Specific operator names to hide
+                                
+                                namespaces:
+                                  type: object
+                                  properties:
+                                    visibility:
+                                      type: string
+                                      enum: ["all", "none", "filtered"]
+                                      default: "all"
+                                      description: Namespace visibility level
+                                    filters:
+                                      type: object
+                                      properties:
+                                        allowed:
+                                          type: array
+                                          items:
+                                            type: string
+                                          description: Allowed namespace names or patterns
+                                        denied:
+                                          type: array
+                                          items:
+                                            type: string
+                                          description: Denied namespace names or patterns
+                                
+                                pods:
+                                  type: object
+                                  properties:
+                                    visibility:
+                                      type: string
+                                      enum: ["all", "none", "filtered"]
+                                      default: "all"
+                                      description: Pod visibility level
+                                    filters:
+                                      type: object
+                                      properties:
+                                        allowedNamespaces:
+                                          type: array
+                                          items:
+                                            type: string
+                                          description: Namespaces where pods are visible
+                  
+              # WHEN - Temporal constraints
+              lifecycle:
+                type: object
+                properties:
+                  validity:
+                    type: object
+                    properties:
+                      notBefore:
+                        type: string
+                        format: date-time
+                        description: Policy is not valid before this time
+                      notAfter:
+                        type: string
+                        format: date-time
+                        description: Policy expires after this time
+              
+              # HOW - Operational aspects
+              operations:
+                type: object
+                properties:
+                  audit:
+                    type: object
+                    properties:
+                      logAccess:
+                        type: boolean
+                        default: false
+                        description: Log all access attempts using this policy
+                      requireReason:
+                        type: boolean
+                        default: false
+                        description: Require reason for access
+          
+          # Status remains unchanged
+          status:
+            type: object
+            properties:
+              state:
+                type: string
+                enum: ["Active", "Inactive", "Error", "Pending", "Expired"]
+                default: "Pending"
+              compiledAt:
+                type: string
+                format: date-time
+              lastEvaluated:
+                type: string
+                format: date-time
+              evaluationCount:
+                type: integer
+                default: 0
+              affectedUsers:
+                type: integer
+              affectedGroups:
+                type: integer
+              affectedServiceAccounts:
+                type: integer
+              hash:
+                type: string
+              message:
+                type: string
+              conditions:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                    status:
+                      type: string
+                    lastTransitionTime:
+                      type: string
+                      format: date-time
+                    reason:
+                      type: string
+                    message:
+                      type: string
+    
+    subresources:
+      status: {}
+    
+    additionalPrinterColumns:
+    - name: Effect
+      type: string
+      jsonPath: .spec.access.effect
+    - name: Priority
+      type: integer
+      jsonPath: .spec.identity.priority
+    - name: Enabled
+      type: boolean
+      jsonPath: .spec.access.enabled
+    - name: State
+      type: string
+      jsonPath: .status.state
+    - name: Users
+      type: integer
+      jsonPath: .status.affectedUsers
+    - name: Groups
+      type: integer
+      jsonPath: .status.affectedGroups
+    - name: Age
+      type: date
+      jsonPath: .metadata.creationTimestamp
+      
+  scope: Namespaced
+  names:
+    plural: monitoraccesspolicies
+    singular: monitoraccesspolicy
+    kind: MonitorAccessPolicy
+    shortNames:
+    - map
+    - policy

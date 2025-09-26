@@ -1,0 +1,131 @@
+{{- if ((.Values.api).enabled) | default true }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-api
+  labels:
+    app: clusterpulse
+    component: api
+spec:
+  replicas: {{ ((.Values.api).replicas) | default 3 }}
+  selector:
+    matchLabels:
+      app: clusterpulse
+      component: api
+  template:
+    metadata:
+      labels:
+        app: clusterpulse
+        component: api
+    spec:
+      serviceAccountName: {{ .Release.Name }}-api
+      {{- if (.Values.api).nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.api.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if (.Values.api).tolerations }}
+      tolerations:
+        {{- toYaml .Values.api.tolerations | nindent 8 }}
+      {{- end }}
+      {{- if (.Values.api).affinity }}
+      affinity:
+        {{- toYaml .Values.api.affinity | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: api
+        image: {{ ((.Values.api).image) }}
+        imagePullPolicy: {{ ((.Values.api).imagePullPolicy) | default "Always" }}
+        ports:
+        - containerPort: {{ (((.Values.api).server).port) | default 8080 }}
+          name: http
+          protocol: TCP
+        env:
+        # Environment
+        - name: ENVIRONMENT
+          value: "production"
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        
+        # OAuth configuration
+        - name: OAUTH_PROXY_ENABLED
+          value: {{ (((.Values.api).oauth).enabled) | default true | quote }}
+        - name: OAUTH_HEADER_USER
+          value: {{ (((.Values.api).oauth).headerUser) | default "X-Forwarded-User" | quote }}
+        - name: OAUTH_HEADER_EMAIL
+          value: {{ (((.Values.api).oauth).headerEmail) | default "X-Forwarded-Email" | quote }}
+        
+        # RBAC configuration
+        - name: RBAC_ENABLED
+          value: {{ (((.Values.api).rbac).enabled) | default true | quote }}
+        - name: RBAC_DEFAULT_DENY
+          value: {{ (((.Values.api).rbac).defaultDeny) | default true | quote }}
+        - name: RBAC_CACHE_TTL
+          value: {{ (((.Values.api).rbac).cacheTTL) | default 300 | quote }}
+        - name: RBAC_AUDIT_ENABLED
+          value: {{ (((.Values.api).rbac).auditEnabled) | default true | quote }}
+        - name: RBAC_GROUP_SYNC_INTERVAL
+          value: {{ (((.Values.api).rbac).groupSyncInterval) | default 300 | quote }}
+        
+        # Logging configuration
+        - name: LOG_LEVEL
+          value: {{ (((.Values.api).logging).level) | default "INFO" | quote }}
+        - name: LOG_JSON
+          value: {{ (((.Values.api).logging).json) | default true | quote }}
+        - name: DEBUG
+          value: {{ eq ((((.Values.api).logging).level) | default "INFO") "DEBUG" | quote }}
+        
+        # Security configuration
+        - name: TRUSTED_HOSTS
+          value: {{ (((.Values.api).security).trustedHosts) | default (list "*.apps.openshift.com" "localhost" "127.0.0.1" "10.*" "172.*") | toJson | quote }}
+        - name: SESSION_EXPIRE_MINUTES
+          value: {{ (((.Values.api).security).sessionExpireMinutes) | default 1440 | quote }}
+        - name: ALLOWED_ORIGINS
+          value: {{ (((.Values.api).security).allowedOrigins) | default (list "*") | toJson | quote }}
+        
+        # Redis configuration
+        - name: REDIS_HOST
+          value: {{ (((.Values.api).redis).host) | default (printf "%s-redis-master" .Release.Name) | quote }}
+        - name: REDIS_PORT
+          value: {{ (((.Values.api).redis).port) | default "6379" | quote }}
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ (((.Values.api).redis).passwordSecret) | default (printf "%s-redis" .Release.Name) }}
+              key: {{ (((.Values.api).redis).passwordKey) | default "redis-password" }}
+        - name: REDIS_DB
+          value: {{ (((.Values.api).redis).db) | default "0" | quote }}
+        
+        # Server configuration
+        - name: HOST
+          value: {{ (((.Values.api).server).host) | default "0.0.0.0" | quote }}
+        - name: PORT
+          value: {{ (((.Values.api).server).port) | default 8080 | quote }}
+        - name: WORKERS
+          value: {{ (((.Values.api).server).workers) | default 1 | quote }}
+        - name: RELOAD
+          value: {{ (((.Values.api).server).reload) | default false | quote }}
+        
+        {{- if (.Values.api).extraEnv }}
+        {{- toYaml .Values.api.extraEnv | nindent 8 }}
+        {{- end }}
+        
+        resources:
+          requests:
+            memory: {{ ((((.Values.api).resources).requests).memory) | default "256Mi" }}
+            cpu: {{ ((((.Values.api).resources).requests).cpu) | default "100m" }}
+          limits:
+            memory: {{ ((((.Values.api).resources).limits).memory) | default "512Mi" }}
+            cpu: {{ ((((.Values.api).resources).limits).cpu) | default "500m" }}
+        
+        {{- if (.Values.api).volumeMounts }}
+        volumeMounts:
+        {{- toYaml .Values.api.volumeMounts | nindent 8 }}
+        {{- end }}
+      
+      {{- if (.Values.api).volumes }}
+      volumes:
+      {{- toYaml .Values.api.volumes | nindent 6 }}
+      {{- end }}
+{{- end }}

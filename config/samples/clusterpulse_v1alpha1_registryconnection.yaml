@@ -1,0 +1,20 @@
+apiVersion: clusterpulse.io/v1alpha1
+kind: RegistryConnection
+metadata:
+  name: dockerhub
+  namespace: clusterpulse
+spec:
+  displayName: Docker Hub
+  endpoint: 'https://registry-1.docker.io'
+  healthCheckPaths:
+    - /v2/
+  insecure: false
+  labels:
+    environment: production
+    provider: dockerhub
+  monitoring:
+    checkCatalog: false
+    interval: 60
+    maxCatalogEntries: 100
+    timeout: 10
+  skipTLSVerify: false

@@ -1,0 +1,133 @@
+apiVersion: charts.clusterpulse.io/v1alpha1
+kind: ClusterPulse
+metadata:
+  name: clusterpulse-prod
+spec:
+  redis:
+    enabled: true
+  
+  # API Configuration
+  api:
+    enabled: true
+    replicas: 3
+    imagePullPolicy: "Always"
+    
+    # OAuth configuration
+    oauth:
+      enabled: true
+      headerUser: "X-Forwarded-User"
+      headerEmail: "X-Forwarded-Email"
+    
+    # RBAC configuration
+    rbac:
+      enabled: true
+      defaultDeny: true
+      cacheTTL: 0  # 0 disables caching for real-time security
+      auditEnabled: true
+      groupSyncInterval: 300
+    
+    # Security configuration
+    security:
+      trustedHosts:
+        - "*"
+      sessionExpireMinutes: 1440  # 24 hours
+      allowedOrigins:
+        - "*"
+    
+    # Logging configuration
+    logging:
+      level: "INFO"
+      json: true
+    
+    # Server configuration
+    server:
+      host: "0.0.0.0"
+      port: 8080
+      workers: 1
+      reload: false
+    
+    # Resources
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+    
+    # Optional: Node selector for specific node placement
+    # nodeSelector:
+    #   node-role.kubernetes.io/worker: "true"
+    
+    # Optional: Tolerations
+    # tolerations:
+    # - key: "dedicated"
+    #   operator: "Equal"
+    #   value: "api"
+    #   effect: "NoSchedule"
+    
+    # Optional: Extra environment variables
+    # extraEnv:
+    # - name: CUSTOM_SETTING
+    #   value: "custom-value"
+  
+  # Frontend Configuration
+  frontend:
+    enabled: true
+    replicas: 3
+    oauth:
+      enabled: true
+      image: "quay.io/openshift/origin-oauth-proxy:4.17"
+    route:
+      enabled: true
+      tls:
+        termination: "reencrypt"
+    config:
+      refreshInterval: 30000
+      theme:
+        defaultTheme: "auto"
+      features:
+        devTools: false
+        mockData: false
+        registryStatus: true
+        nodeDetails: true
+        operatorDetails: true
+  
+  # Cluster Engine Configuration
+  clusterEngine:
+    replicas: 1
+    timing:
+      reconciliationInterval: "30"
+      fullScanInterval: "300"
+      cacheTTL: "600"
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+  
+  # Policy Engine Configuration
+  policyEngine:
+    enabled: true
+    replicas: 1
+    cache:
+      policyCacheTTL: 300
+      groupCacheTTL: 300
+    limits:
+      maxPoliciesPerUser: 100
+      policyValidationInterval: 300
+    batch:
+      redisScanBatchSize: 100
+      redisPipelineBatchSize: 1000
+      cacheClearBatchSize: 500
+    logging:
+      level: "INFO"
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "50m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"

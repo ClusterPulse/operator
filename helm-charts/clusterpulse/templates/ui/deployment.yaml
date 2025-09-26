@@ -1,0 +1,147 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-ui
+  labels:
+    app: clusterpulse
+    component: ui
+spec:
+  replicas: {{ ((.Values.frontend).replicas) | default 3 }}
+  selector:
+    matchLabels:
+      app: clusterpulse
+      component: ui
+  template:
+    metadata:
+      labels:
+        app: clusterpulse
+        component: ui 
+    spec:
+      serviceAccountName: {{ .Release.Name }}-ui
+      {{- if (.Values.frontend).nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.frontend.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if (.Values.frontend).tolerations }}
+      tolerations:
+        {{- toYaml .Values.frontend.tolerations | nindent 8 }}
+      {{- end }}
+      {{- if (.Values.frontend).affinity }}
+      affinity:
+        {{- toYaml .Values.frontend.affinity | nindent 8 }}
+      {{- end }}
+      containers:
+      {{- if (((.Values.frontend).oauth).enabled) | default true }}
+      - name: oauth-proxy
+        image: {{ (((.Values.frontend).oauth).image) | default "quay.io/openshift/origin-oauth-proxy:4.17" }}
+        imagePullPolicy: {{ (((.Values.frontend).oauth).imagePullPolicy) | default "IfNotPresent" }}
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        args:
+        - --https-address=0.0.0.0:8443
+        - --http-address=
+        - --email-domain={{ (((.Values.frontend).oauth).emailDomain) | default "*" }}
+        - --provider={{ (((.Values.frontend).oauth).provider) | default "openshift" }}
+        - --openshift-service-account={{ .Release.Name }}-ui
+        - --upstream=http://localhost:{{ (((.Values.frontend).nginx).port) | default 8080 }}
+        - --tls-cert=/etc/tls/private/tls.crt
+        - --tls-key=/etc/tls/private/tls.key
+        - --cookie-secret-file=/etc/proxy/secrets/session_secret
+        - --openshift-delegate-urls={{ printf "{\"/\":{\"resource\":\"%s\",\"verb\":\"%s\"}}" ((((.Values.frontend).oauth).sar).resource | default "namespaces") ((((.Values.frontend).oauth).sar).verb | default "get") }}
+        {{- if ((((.Values.frontend).oauth).passHeaders).userHeaders) | default true }}
+        - --pass-user-headers=true
+        {{- end }}
+        {{- if ((((.Values.frontend).oauth).passHeaders).accessToken) | default true }}
+        - --pass-access-token=true
+        {{- end }}
+        {{- if ((((.Values.frontend).oauth).passHeaders).bearerToken) | default true }}
+        - --pass-user-bearer-token=true
+        {{- end }}
+        {{- if not (((((.Values.frontend).oauth).passHeaders).basicAuth) | default false) }}
+        - --pass-basic-auth=false
+        {{- end }}
+        {{- range (((.Values.frontend).oauth).skipAuthRegex) | default list }}
+        - --skip-auth-regex={{ . }}
+        {{- end }}
+        resources:
+          limits:
+            cpu: {{ (((((.Values.frontend).oauth).resources).limits).cpu) | default "100m" }}
+            memory: {{ (((((.Values.frontend).oauth).resources).limits).memory) | default "128Mi" }}
+          requests:
+            cpu: {{ (((((.Values.frontend).oauth).resources).requests).cpu) | default "50m" }}
+            memory: {{ (((((.Values.frontend).oauth).resources).requests).memory) | default "64Mi" }}
+        volumeMounts:
+        - mountPath: /etc/tls/private
+          name: frontend-tls
+          readOnly: true
+        - mountPath: /etc/proxy/secrets
+          name: proxy-secrets
+          readOnly: true
+      {{- end }}
+      - name: frontend
+        image: {{ ((.Values.frontend).image) }}
+        imagePullPolicy: {{ ((.Values.frontend).imagePullPolicy) | default "Always" }}
+        ports:
+        - containerPort: {{ (((.Values.frontend).nginx).port) | default 8080 }}
+          name: http
+          protocol: TCP
+        env:
+        {{- if (((.Values.frontend).config).apiUrl) }}
+        - name: VITE_API_URL
+          value: {{ .Values.frontend.config.apiUrl }}
+        {{- end }}
+        {{- if (((.Values.frontend).config).refreshInterval) }}
+        - name: VITE_REFRESH_INTERVAL
+          value: {{ .Values.frontend.config.refreshInterval | quote }}
+        {{- end }}
+        {{- if ((((.Values.frontend).config).theme).defaultTheme) }}
+        - name: VITE_DEFAULT_THEME
+          value: {{ .Values.frontend.config.theme.defaultTheme }}
+        {{- end }}
+        {{- if ((((.Values.frontend).config).features).devTools) }}
+        - name: VITE_ENABLE_DEVTOOLS
+          value: {{ .Values.frontend.config.features.devTools | quote }}
+        {{- end }}
+        {{- if ((((.Values.frontend).config).features).mockData) }}
+        - name: VITE_ENABLE_MOCK_DATA
+          value: {{ .Values.frontend.config.features.mockData | quote }}
+        {{- end }}
+        {{- if (.Values.frontend).extraEnv }}
+        {{- toYaml .Values.frontend.extraEnv | nindent 8 }}
+        {{- end }}
+        resources:
+          limits:
+            cpu: {{ ((((.Values.frontend).resources).limits).cpu) | default "200m" }}
+            memory: {{ ((((.Values.frontend).resources).limits).memory) | default "256Mi" }}
+          requests:
+            cpu: {{ ((((.Values.frontend).resources).requests).cpu) | default "50m" }}
+            memory: {{ ((((.Values.frontend).resources).requests).memory) | default "128Mi" }}
+        volumeMounts:
+        - mountPath: /etc/nginx/conf.d/default.conf
+          name: nginx-config
+          subPath: default.conf
+          readOnly: true
+        {{- if (.Values.frontend).volumeMounts }}
+        {{- toYaml .Values.frontend.volumeMounts | nindent 8 }}
+        {{- end }}
+      volumes:
+      {{- if (((.Values.frontend).oauth).enabled) | default true }}
+      - name: frontend-tls
+        secret:
+          secretName: clusterpulse-ui-tls
+      - name: proxy-secrets
+        secret:
+          secretName: {{ .Release.Name }}-proxy-secrets
+      {{- end }}
+      - name: nginx-config
+        configMap:
+          name: {{ .Release.Name }}-nginx
+          items:
+            - key: default.conf
+              path: default.conf
+      {{- if (.Values.frontend).volumes }}
+      {{- toYaml .Values.frontend.volumes | nindent 6 }}
+      {{- end }}
+
