@@ -72,6 +72,15 @@ spec:
                     type: boolean
                     default: true
                     description: Enable Redis subchart deployment
+                  volumePermissions:
+                    type: object
+                    description: Volume Permission changes for the Redis storage
+                    properties:
+                      enabled:
+                        type: boolean
+                        default: true
+                        description: Enable init container that changes the owner/group of the PV mount point to runAsUser:fsGroup
+
               
               # Frontend/UI Configuration
               frontend:
@@ -455,7 +464,6 @@ spec:
                         description: Key in secret containing Redis password
                       db:
                         type: string
-                        default: "0"
                         description: Redis database number
                   
                   timing:
@@ -674,7 +682,6 @@ spec:
                         description: Key in secret containing Redis password
                       db:
                         type: string
-                        default: "0"
                         description: Redis database number
                   
                   cache:
@@ -892,7 +899,6 @@ spec:
                         description: Key in secret containing Redis password
                       db:
                         type: string
-                        default: "0"
                         description: Redis database number
                   
                   oauth:

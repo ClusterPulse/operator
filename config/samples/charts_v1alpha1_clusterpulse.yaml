@@ -5,6 +5,8 @@ metadata:
 spec:
   redis:
     enabled: true
+    volumePermissions:
+      enabled: true
   
   # API Configuration
   api:
