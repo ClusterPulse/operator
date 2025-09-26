@@ -7,6 +7,8 @@ metadata:
   name: clusterpulse.v0.0.0
   namespace: placeholder
 spec:
+  categories:
+    - Monitoring
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
@@ -324,7 +326,17 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:text
       version: v1alpha1
-  description: Operator designed to manage multi OpenShift environments through GitOps
+  description: |
+    ## About ClusterPulse
+    ClusterPulse is a comprehensive multi-cluster monitoring and management platform designed for OpenShift environments. It provides centralized visibility, policy-based access control, and real-time monitoring across multiple clusters through a unified dashboard. For more information, visit [https://github.com/ClusterPulse/operator](https://github.com/ClusterPulse/operator).
+  
+    ## Features and Capabilities
+    - **Multi-Cluster Monitoring**: Connect and monitor multiple OpenShift/Kubernetes clusters from a single interface
+    - **Policy-Based Access Control**: Fine-grained access policies using MonitorAccessPolicy CRDs
+    - **Real-Time Metrics**: Live cluster health, node status, and resource utilization tracking
+    - **Registry Monitoring**: Monitor connected container registries
+    - **OAuth Integration**: Seamless OpenShift OAuth integration for authentication
+    - **Redis-Backed Storage**: Scalable data storage using Redis for metrics and state
   displayName: ClusterPulse
   icon:
   - base64data: PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAyNTAgMTAwMCAxMDAwIj4KICA8ZGVmcz4KICAgIDxzdHlsZT4KICAgICAgLmNscy0xIHsKICAgICAgICBmaWxsOiAjZmZmOwogICAgICB9CgogICAgICAuY2xzLTIgewogICAgICAgIGZpbGw6ICMwMDQ3OGY7CiAgICAgIH0KICAgIDwvc3R5bGU+CiAgPC9kZWZzPgogIDxjaXJjbGUgY2xhc3M9ImNscy0xIiBjeD0iNDk5Ljk5IiBjeT0iNzUwIiByPSI0OTMiLz4KICA8Zz4KICAgIDxwYXRoIGQ9Ik00OTkuOTgsMTE3Mi40NGMtMjE3LjI3LDAtMzk2LjczLTE2NC44OS00MTkuODgtMzc2LjFoLTMxLjQ0YzEwLjQ1LDEwMy42Nyw1NS44NywxOTkuNzgsMTMwLjU0LDI3NC40NSw4NS42OSw4NS42OSwxOTkuNjEsMTMyLjg4LDMyMC43OSwxMzIuODhzMjM1LjEtNDcuMTksMzIwLjc5LTEzMi44OGM3NC42Ny03NC42NywxMjAuMDktMTcwLjc4LDEzMC41NC0yNzQuNDVoLTMxLjQ0Yy0yMy4xNSwyMTEuMjEtMjAyLjYxLDM3Ni4xLTQxOS44OSwzNzYuMVoiLz4KICAgIDxwYXRoIGQ9Ik00OTkuOTgsMzI3LjU2YzIyNi44OSwwLDQxMi41NCwxNzkuOCw0MjIuMDMsNDA0LjM5aDMxLjI2Yy00LjQ1LTExNC40MS01MS4wNy0yMjEuMzMtMTMyLjQ5LTMwMi43NS04NS42OS04NS42OS0xOTkuNjEtMTMyLjg3LTMyMC43OS0xMzIuODdzLTIzNS4xLDQ3LjE5LTMyMC43OSwxMzIuODhjLTgxLjQyLDgxLjQyLTEyOC4wNSwxODguMzQtMTMyLjQ5LDMwMi43NWgzMS4yNmM5LjQ5LTIyNC41OSwxOTUuMTQtNDA0LjM5LDQyMi4wMy00MDQuMzlaIi8+CiAgICA8cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik05OTIuOTksNzQ4Ljk0Yy4xLDExLjg3LS4xOSwyMy4xNi0uODYsMzAuNDJoLTE4OC4wOXMtNTYuMzcsMTg3LjktNTYuMzcsMTg3LjlsLTE0Ni4wMy00MzIuNTItMjA2LjIxLDU0OS43NS0xMjUtNDAxLjE1LTQzLjIsOTYuMDJINy44NWMtLjY0LTkuOTgtLjktMjAuMzYtLjg2LTMwLjQyaDE5MC42czgwLjAzLTE3Ny43OSw4MC4wMy0xNzcuNzlsMTIxLjQ5LDM4OS44NSwyMDQuNjEtNTQ1LjQ3LDE0MS41NSw0MTkuMzMsMjUuODEtODUuOTFoMjIxLjlaIi8+CiAgPC9nPgo8L3N2Zz4K
