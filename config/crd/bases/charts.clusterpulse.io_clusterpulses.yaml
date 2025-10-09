@@ -72,15 +72,6 @@ spec:
                     type: boolean
                     default: true
                     description: Enable Redis subchart deployment
-                  volumePermissions:
-                    type: object
-                    description: Volume Permission changes for the Redis storage
-                    properties:
-                      enabled:
-                        type: boolean
-                        default: true
-                        description: Enable init container that changes the owner/group of the PV mount point to runAsUser:fsGroup
-
               
               # Frontend/UI Configuration
               frontend:
@@ -334,6 +325,11 @@ spec:
                     type: object
                     description: Frontend application configuration
                     properties:
+                      enableAnonymousAccess:
+                        type: boolean
+                        default: false
+                        description: Enable access to the cluster page w/ restricted permissions to unauthenticated users.
+
                       apiUrl:
                         type: string
                         description: Backend API URL override

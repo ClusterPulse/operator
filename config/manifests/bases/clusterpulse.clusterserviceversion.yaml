@@ -4,11 +4,14 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Basic Install
+    categories: Monitoring
+    containerImage: docker.io/clusterpulse/clusterpulse-operator
+    description: Provides OpenShift cluster health monitoring
+    repository: https://github.com/ClusterPulse/operator
+    support: None
   name: clusterpulse.v0.0.0
   namespace: placeholder
 spec:
-  categories:
-    - Monitoring
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
@@ -329,7 +332,7 @@ spec:
   description: |
     ## About ClusterPulse
     ClusterPulse is a comprehensive multi-cluster monitoring and management platform designed for OpenShift environments. It provides centralized visibility, policy-based access control, and real-time monitoring across multiple clusters through a unified dashboard. For more information, visit [https://github.com/ClusterPulse/operator](https://github.com/ClusterPulse/operator).
-  
+
     ## Features and Capabilities
     - **Multi-Cluster Monitoring**: Connect and monitor multiple OpenShift/Kubernetes clusters from a single interface
     - **Policy-Based Access Control**: Fine-grained access policies using MonitorAccessPolicy CRDs

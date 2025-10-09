@@ -5,8 +5,10 @@ metadata:
 spec:
   redis:
     enabled: true
-    volumePermissions:
-      enabled: true
+    global:
+      compatibility:
+        openshift:
+          adaptSecurityContext: "force"
   
   # API Configuration
   api:
@@ -85,6 +87,7 @@ spec:
       tls:
         termination: "reencrypt"
     config:
+      enableAnonymousAccess: false
       refreshInterval: 30000
       theme:
         defaultTheme: "auto"
