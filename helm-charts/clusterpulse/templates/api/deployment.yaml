@@ -41,6 +41,12 @@ spec:
           protocol: TCP
         env:
         # Environment
+        {{- if (((.Values.frontend).config).enableAnonymousAccess) }}
+        - name: ALLOW_ANONYMOUS_ACCESS
+          value: "true"
+        - name: ANONYMOUS_CLUSTER_VIEW
+          value: "true"
+        {{- end }}
         - name: ENVIRONMENT
           value: "production"
         - name: NAMESPACE

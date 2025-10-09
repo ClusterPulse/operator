@@ -1,9 +1,7 @@
-redis:
-  enabled: true
 api:
-  image: docker.io/clusterpulse/clusterpulse-api:v0.1.0
+  image: docker.io/clusterpulse/clusterpulse-api:v0.2.0
 frontend:
-  image: docker.io/clusterpulse/clusterpulse-ui:v0.1.0
+  image: docker.io/clusterpulse/clusterpulse-ui:v0.2.0
 policyEngine:
   image: docker.io/clusterpulse/clusterpulse-policy-controller:v0.1.0
 clusterEngine:
