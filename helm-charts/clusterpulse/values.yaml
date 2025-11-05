@@ -6,3 +6,6 @@ policyEngine:
   image: docker.io/clusterpulse/clusterpulse-policy-controller:v0.1.0
 clusterEngine:
   image: docker.io/clusterpulse/clusterpulse-cluster-controller:v0.1.0
+redis:
+  image:
+    tag: latest
