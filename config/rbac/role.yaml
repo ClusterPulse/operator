@@ -87,5 +87,20 @@ rules:
   - "route.openshift.io"
   resources:
   - "routes"
+###
+# So that the SA can add PDBs
+###
+- apiGroups:
+  - policy
+  resources:
+  - poddisruptionbudgets
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
 
 # +kubebuilder:scaffold:rules
