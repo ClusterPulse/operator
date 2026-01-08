@@ -6,7 +6,6 @@ on:
   workflow_dispatch:
     branches:
       - main
-      - feature/automated-releases
     inputs:
       version:
         description: 'Version to release (e.g., 0.2.1)'
