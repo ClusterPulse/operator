@@ -1,0 +1,329 @@
+name: Release to Community Operators
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 0.2.1)'
+        required: true
+        type: string
+      channels:
+        description: 'Bundle channels'
+        required: false
+        default: 'fast-v0'
+        type: string
+      default_channel:
+        description: 'Default channel'
+        required: false
+        default: 'fast-v0'
+        type: string
+      dry_run:
+        description: 'Dry run (do not push changes)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  # Operator configuration
+  OPERATOR_NAME: clusterpulse
+  OPERATOR_IMAGE: docker.io/clusterpulse/clusterpulse-operator
+  
+  # Community operators configuration
+  COMMUNITY_REPO_UPSTREAM: asamoorerh/community-operators-prod
+    #COMMUNITY_REPO_UPSTREAM: redhat-openshift-ecosystem/community-operators-prod
+  COMMUNITY_REPO_FORK: ${{ github.repository_owner }}/community-operators-prod
+  COMMUNITY_REPO_BRANCH: main
+  
+  # Bundle configuration
+  BUNDLE_IMAGE_REGISTRY: quay.io/community-operator-pipeline-prod
+  
+  # Catalog template channels
+  CATALOG_TEMPLATE_CHANNELS: "Fast"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+            # Strip 'v' prefix if present
+            VERSION="${VERSION#v}"
+          else
+            VERSION="${{ inputs.version }}"
+          fi
+          
+          # Validate version format (x.x.x)
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Version '$VERSION' does not match format x.x.x"
+            exit 1
+          fi
+          
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "📦 Releasing version: $VERSION"
+
+      - name: Set bundle configuration
+        id: config
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            CHANNELS="${{ vars.BUNDLE_CHANNELS || 'fast-v0' }}"
+            DEFAULT_CHANNEL="${{ vars.BUNDLE_DEFAULT_CHANNEL || 'fast-v0' }}"
+          else
+            CHANNELS="${{ inputs.channels }}"
+            DEFAULT_CHANNEL="${{ inputs.default_channel }}"
+          fi
+          
+          echo "channels=$CHANNELS" >> $GITHUB_OUTPUT
+          echo "default_channel=$DEFAULT_CHANNEL" >> $GITHUB_OUTPUT
+          echo "🔧 Channels: $CHANNELS, Default: $DEFAULT_CHANNEL"
+
+      - name: Checkout operator repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install operator-sdk
+        run: |
+          OPERATOR_SDK_VERSION="v1.41.1"
+          curl -sSLo operator-sdk "https://github.com/operator-framework/operator-sdk/releases/download/${OPERATOR_SDK_VERSION}/operator-sdk_linux_amd64"
+          chmod +x operator-sdk
+          sudo mv operator-sdk /usr/local/bin/
+
+      - name: Install kustomize
+        run: |
+          curl -sSLo - https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v5.6.0/kustomize_v5.6.0_linux_amd64.tar.gz | tar xzf -
+          chmod +x kustomize
+          sudo mv kustomize /usr/local/bin/
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Build and push operator image
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          IMG="${{ env.OPERATOR_IMAGE }}:${VERSION}"
+          DRY_RUN="${{ github.event.inputs.dry_run }}"
+          
+          echo "Building operator image: $IMG"
+          make docker-build IMG="$IMG"
+          
+          if [ "$DRY_RUN" != "true" ]; then
+            echo "Pushing operator image: $IMG"
+            make docker-push IMG="$IMG"
+          else
+            echo "Dry run - skipping push"
+          fi
+
+      - name: Generate bundle
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          CHANNELS="${{ steps.config.outputs.channels }}"
+          DEFAULT_CHANNEL="${{ steps.config.outputs.default_channel }}"
+          IMG="${{ env.OPERATOR_IMAGE }}:${VERSION}"
+          
+          echo "📋 Generating bundle for version $VERSION"
+          
+          # Update the manager image reference
+          cd config/manager && kustomize edit set image controller="$IMG" && cd ../..
+          
+          # Generate bundle
+          VERSION="$VERSION" CHANNELS="$CHANNELS" DEFAULT_CHANNEL="$DEFAULT_CHANNEL" make bundle
+          
+          # Validate bundle
+          operator-sdk bundle validate ./bundle
+          
+          echo "✅ Bundle generated and validated"
+
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.DEPLOYER_APP_ID }}
+          private-key: ${{ secrets.DEPLOYER_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: community-operators-prod
+
+      - name: Clone community operators fork and sync with upstream
+        run: |
+          echo "📥 Cloning community operators fork"
+          git clone "https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/${{ env.COMMUNITY_REPO_FORK }}.git" community-operators
+          cd community-operators
+ 
+          # Add upstream remote
+          git remote add upstream "https://github.com/${{ env.COMMUNITY_REPO_UPSTREAM }}.git"
+          git fetch upstream
+          
+          # Force sync fork's main branch with upstream
+          # This ensures our fork is always up-to-date before creating release branches
+          echo "🔄 Syncing fork with upstream..."
+          git checkout ${{ env.COMMUNITY_REPO_BRANCH }}
+          git reset --hard upstream/${{ env.COMMUNITY_REPO_BRANCH }}
+          
+          DRY_RUN="${{ github.event.inputs.dry_run }}"
+          if [ "$DRY_RUN" != "true" ]; then
+            git push origin ${{ env.COMMUNITY_REPO_BRANCH }} --force
+            echo "✅ Fork synced with upstream"
+          else
+            echo "⏭️ Dry run - skipping fork sync push"
+          fi
+
+      - name: Copy bundle to community operators
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          OPERATOR_DIR="community-operators/operators/${{ env.OPERATOR_NAME }}"
+          VERSION_DIR="${OPERATOR_DIR}/${VERSION}"
+          
+          echo "📁 Creating version directory: $VERSION_DIR"
+          mkdir -p "$VERSION_DIR"
+          
+          # Copy bundle contents
+          cp -r bundle/manifests "$VERSION_DIR/"
+          cp -r bundle/metadata "$VERSION_DIR/"
+          
+          # Copy tests if they exist
+          if [ -d "bundle/tests" ]; then
+            cp -r bundle/tests "$VERSION_DIR/"
+          fi
+          
+          echo "✅ Bundle contents copied"
+          ls -la "$VERSION_DIR/"
+
+      - name: Create release-config.yml
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          VERSION_DIR="community-operators/operators/${{ env.OPERATOR_NAME }}/${VERSION}"
+          CHANNELS="${{ env.CATALOG_TEMPLATE_CHANNELS }}"
+          
+          cat > "${VERSION_DIR}/release-config.yml" << EOF
+---
+catalog_templates:
+  - template_name: semver.yaml
+    channels:
+      - ${CHANNELS}
+EOF
+          
+          echo "✅ Created release-config.yml:"
+          cat "${VERSION_DIR}/release-config.yml"
+
+      - name: Install yq
+        uses: mikefarah/yq@v4
+
+      - name: Update semver.yaml catalog template
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          OPERATOR_DIR="community-operators/operators/${{ env.OPERATOR_NAME }}"
+          SEMVER_FILE="${OPERATOR_DIR}/catalog-templates/semver.yaml"
+          NEW_IMAGE="${{ env.BUNDLE_IMAGE_REGISTRY }}/${{ env.OPERATOR_NAME }}:${VERSION}"
+          
+          # Create catalog-templates directory if it doesn't exist
+          mkdir -p "${OPERATOR_DIR}/catalog-templates"
+          
+          if [ -f "$SEMVER_FILE" ]; then
+            echo "📝 Updating existing semver.yaml"
+            
+            # Check if image already exists
+            if yq ".Fast.Bundles[].Image" "$SEMVER_FILE" | grep -q "$NEW_IMAGE"; then
+              echo "⚠️ Image $NEW_IMAGE already exists in semver.yaml"
+            else
+              # Prepend new image to the Bundles array (newest first)
+              yq -i ".Fast.Bundles = [{\"Image\": \"$NEW_IMAGE\"}] + .Fast.Bundles" "$SEMVER_FILE"
+              echo "✅ Added image: $NEW_IMAGE"
+            fi
+          else
+            echo "📝 Creating new semver.yaml"
+            cat > "$SEMVER_FILE" << EOF
+---
+Schema: olm.semver
+GenerateMajorChannels: true
+GenerateMinorChannels: false
+Fast:
+  Bundles:
+    - Image: ${NEW_IMAGE}
+EOF
+          fi
+          
+          echo "📄 Current semver.yaml:"
+          cat "$SEMVER_FILE"
+
+      - name: Configure Git for signed commits
+        run: |
+          cd community-operators
+          git config user.name "${{ vars.GIT_COMMIT_NAME || github.actor }}"
+          git config user.email "${{ vars.GIT_COMMIT_EMAIL || format('{0}@users.noreply.github.com', github.actor) }}"
+
+      - name: Commit changes
+        id: commit
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          cd community-operators
+          
+          git add -A
+          
+          if git diff --staged --quiet; then
+            echo "⚠️ No changes to commit"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "📝 Committing changes"
+            git commit -S -s -m "${{ env.OPERATOR_NAME }} (${VERSION})"
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "✅ Committed with signed-off-by and GPG signature"
+          fi
+
+      - name: Push changes
+        if: steps.commit.outputs.has_changes == 'true' && github.event.inputs.dry_run != 'true'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          cd community-operators
+          
+          # Create a branch for the PR
+          BRANCH_NAME="${{ env.OPERATOR_NAME }}-${VERSION}"
+          git checkout -b "$BRANCH_NAME"
+          
+          echo "🚀 Pushing branch: $BRANCH_NAME"
+          git push -u origin "$BRANCH_NAME" --force
+          
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "✅ Changes pushed to $BRANCH_NAME"
+
+      - name: Summary
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          DRY_RUN="${{ github.event.inputs.dry_run }}"
+          
+          echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version:** $VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "- **Operator Image:** ${{ env.OPERATOR_IMAGE }}:$VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "- **Bundle Image:** ${{ env.BUNDLE_IMAGE_REGISTRY }}/${{ env.OPERATOR_NAME }}:$VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "- **Channels:** ${{ steps.config.outputs.channels }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Default Channel:** ${{ steps.config.outputs.default_channel }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "⚠️ **This was a dry run - no changes were pushed**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ Changes have been pushed to the community operators fork" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Next Steps:**" >> $GITHUB_STEP_SUMMARY
+            echo "1. Navigate to your fork: https://github.com/${{ env.COMMUNITY_REPO_FORK }}" >> $GITHUB_STEP_SUMMARY
+            echo "2. Create a pull request to: https://github.com/${{ env.COMMUNITY_REPO_UPSTREAM }}" >> $GITHUB_STEP_SUMMARY
+          fi
