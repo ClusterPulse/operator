@@ -312,7 +312,7 @@ jobs:
         id: create-pr
         if: steps.push.outputs.branch_name != ''
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           BRANCH_NAME="${{ steps.push.outputs.branch_name }}"
