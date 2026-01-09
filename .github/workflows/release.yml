@@ -307,6 +307,35 @@ jobs:
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
           echo "✅ Changes pushed to $BRANCH_NAME"
 
+      - name: Create Pull Request
+        id: create-pr
+        if: steps.push.outputs.branch_name != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          BRANCH_NAME="${{ steps.push.outputs.branch_name }}"
+          
+          PR_TITLE="${{ env.OPERATOR_NAME }} (${VERSION})"
+          
+          # Create PR body
+          PR_BODY="## ${{ env.OPERATOR_NAME }} release ${VERSION}
+          
+          ---
+          *Automated release created by [GitHub Actions](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})*"
+          
+          echo "🔗 Creating pull request..."
+          
+          PR_URL=$(gh pr create \
+            --repo "${{ env.COMMUNITY_REPO_UPSTREAM }}" \
+            --head "${{ github.repository_owner }}:${BRANCH_NAME}" \
+            --base "${{ env.COMMUNITY_REPO_BRANCH }}" \
+            --title "$PR_TITLE" \
+            --body "$PR_BODY")
+          
+          echo "✅ Pull request created: $PR_URL"
+          echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
+
       - name: Summary
         run: |
           VERSION="${{ steps.version.outputs.version }}"
