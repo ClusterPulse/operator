@@ -215,13 +215,13 @@ jobs:
           VERSION_DIR="community-operators/operators/${{ env.OPERATOR_NAME }}/${VERSION}"
           CHANNELS="${{ env.CATALOG_TEMPLATE_CHANNELS }}"
           
-          cat > "${VERSION_DIR}/release-config.yml" << EOF
----
-catalog_templates:
-  - template_name: semver.yaml
-    channels:
-      - ${CHANNELS}
-EOF
+          printf '%s\n' \
+            "---" \
+            "catalog_templates:" \
+            "  - template_name: semver.yaml" \
+            "    channels:" \
+            "      - ${CHANNELS}" \
+            > "${VERSION_DIR}/release-config.yml"
           
           echo "✅ Created release-config.yml:"
           cat "${VERSION_DIR}/release-config.yml"
@@ -252,15 +252,15 @@ EOF
             fi
           else
             echo "📝 Creating new semver.yaml"
-            cat > "$SEMVER_FILE" << EOF
----
-Schema: olm.semver
-GenerateMajorChannels: true
-GenerateMinorChannels: false
-Fast:
-  Bundles:
-    - Image: ${NEW_IMAGE}
-EOF
+            printf '%s\n' \
+              "---" \
+              "Schema: olm.semver" \
+              "GenerateMajorChannels: true" \
+              "GenerateMinorChannels: false" \
+              "Fast:" \
+              "  Bundles:" \
+              "    - Image: ${NEW_IMAGE}" \
+              > "$SEMVER_FILE"
           fi
           
           echo "📄 Current semver.yaml:"
