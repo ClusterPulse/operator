@@ -33,8 +33,7 @@ env:
   OPERATOR_IMAGE: docker.io/clusterpulse/clusterpulse-operator
   
   # Community operators configuration
-  COMMUNITY_REPO_UPSTREAM: asamoorerh/community-operators-prod
-    #COMMUNITY_REPO_UPSTREAM: redhat-openshift-ecosystem/community-operators-prod
+  COMMUNITY_REPO_UPSTREAM: redhat-openshift-ecosystem/community-operators-prod
   COMMUNITY_REPO_FORK: ${{ github.repository_owner }}/community-operators-prod
   COMMUNITY_REPO_BRANCH: main
   
@@ -322,7 +321,6 @@ jobs:
           # Create PR body
           PR_BODY="## ${{ env.OPERATOR_NAME }} release ${VERSION}
           
-          ---
           *Automated release created by [GitHub Actions](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})*"
           
           echo "🔗 Creating pull request..."
