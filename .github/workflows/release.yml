@@ -246,8 +246,9 @@ jobs:
             if yq ".Fast.Bundles[].Image" "$SEMVER_FILE" | grep -q "$NEW_IMAGE"; then
               echo "⚠️ Image $NEW_IMAGE already exists in semver.yaml"
             else
-              # Prepend new image to the Bundles array (newest first)
-              yq -i ".Fast.Bundles = [{\"Image\": \"$NEW_IMAGE\"}] + .Fast.Bundles" "$SEMVER_FILE"
+              # Append new image to the Bundles array (newest first)
+              #yq -i ".Fast.Bundles = [{\"Image\": \"$NEW_IMAGE\"}] + .Fast.Bundles" "$SEMVER_FILE"
+              yq -i ".Fast.Bundles = .Fast.Bundles + [{\"Image\": \"$NEW_IMAGE\"}]" "$SEMVER_FILE"
               echo "✅ Added image: $NEW_IMAGE"
             fi
           else
