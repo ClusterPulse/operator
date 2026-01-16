@@ -5,7 +5,7 @@ metadata:
     alm-examples: '[]'
     capabilities: Basic Install
     categories: Monitoring
-    containerImage: docker.io/clusterpulse/clusterpulse-operator
+    containerImage: quay.io/clusterpulse/operator
     description: Provides OpenShift cluster health monitoring
     repository: https://github.com/ClusterPulse/operator
     support: None
