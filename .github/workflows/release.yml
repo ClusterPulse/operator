@@ -1,8 +1,5 @@
 name: Release to Community Operators
 
-env:
-  REGISTRY: quay.io
-
 on:
   release:
     types: [published]
@@ -31,9 +28,11 @@ on:
         type: boolean
 
 env:
+  REGISTRY: quay.io
+
   # Operator configuration
   OPERATOR_NAME: clusterpulse
-  OPERATOR_IMAGE: quay.io/clusterpulse/operator #docker.io/clusterpulse/clusterpulse-operator
+  OPERATOR_IMAGE: clusterpulse/operator #docker.io/clusterpulse/clusterpulse-operator
   
   # Community operators configuration
   COMMUNITY_REPO_UPSTREAM: redhat-openshift-ecosystem/community-operators-prod
@@ -117,7 +116,7 @@ jobs:
       - name: Build and push operator image
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          IMG="${{ env.OPERATOR_IMAGE }}:${VERSION}"
+          IMG="${{ env.REGISTRY }}/${{ env.OPERATOR_IMAGE }}:${VERSION}"
           DRY_RUN="${{ github.event.inputs.dry_run }}"
           
           echo "Building operator image: $IMG"
@@ -135,7 +134,7 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           CHANNELS="${{ steps.config.outputs.channels }}"
           DEFAULT_CHANNEL="${{ steps.config.outputs.default_channel }}"
-          IMG="${{ env.OPERATOR_IMAGE }}:${VERSION}"
+          IMG="${{env.REGISTRY}}/${{ env.OPERATOR_IMAGE }}:${VERSION}"
           
           echo "📋 Generating bundle for version $VERSION"
           
@@ -347,7 +346,7 @@ jobs:
           echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- **Version:** $VERSION" >> $GITHUB_STEP_SUMMARY
-          echo "- **Operator Image:** ${{ env.OPERATOR_IMAGE }}:$VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "- **Operator Image:** ${{ env.REGISTRY }}/${{ env.OPERATOR_IMAGE }}:${VERSION}" >> $GITHUB_STEP_SUMMARY
           echo "- **Bundle Image:** ${{ env.BUNDLE_IMAGE_REGISTRY }}/${{ env.OPERATOR_NAME }}:$VERSION" >> $GITHUB_STEP_SUMMARY
           echo "- **Channels:** ${{ steps.config.outputs.channels }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Default Channel:** ${{ steps.config.outputs.default_channel }}" >> $GITHUB_STEP_SUMMARY
