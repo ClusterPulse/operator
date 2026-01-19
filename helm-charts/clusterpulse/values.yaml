@@ -1,11 +1,11 @@
 api:
-  image: quay.io/clusterpulse/clusterpulse-api:v0.2.3
+  image: quay.io/clusterpulse/api:v0.2.3
 frontend:
-  image: quay.io/clusterpulse/clusterpulse-ui:v0.2.0
+  image: quay.io/clusterpulse/ui:v0.2.0
 policyEngine:
-  image: quay.io/clusterpulse/clusterpulse-policy-controller:v0.2.3
+  image: quay.io/clusterpulse/policy-controller:v0.2.3
 clusterEngine:
-  image: quay.io/clusterpulse/clusterpulse-cluster-controller:v0.2.2
+  image: quay.io/clusterpulse/cluster-controller:v0.2.2
 redis:
   image:
     tag: latest
