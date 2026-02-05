@@ -166,29 +166,22 @@ jobs:
           owner: ${{ github.repository_owner }}
           repositories: community-operators-prod
 
-      - name: Clone community operators fork and sync with upstream
+      - name: Sync fork with upstream via GitHub API
+        if: github.event.inputs.dry_run != 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          echo "🔄 Syncing fork with upstream via GitHub API..."
+          gh repo sync "${{ env.COMMUNITY_REPO_FORK }}" \
+            --source "${{ env.COMMUNITY_REPO_UPSTREAM }}" \
+            --branch "${{ env.COMMUNITY_REPO_BRANCH }}" \
+            --force
+          echo "✅ Fork synced with upstream"
+
+      - name: Clone community operators fork
         run: |
           echo "📥 Cloning community operators fork"
           git clone "https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/${{ env.COMMUNITY_REPO_FORK }}.git" community-operators
-          cd community-operators
- 
-          # Add upstream remote
-          git remote add upstream "https://github.com/${{ env.COMMUNITY_REPO_UPSTREAM }}.git"
-          git fetch upstream
-          
-          # Force sync fork's main branch with upstream
-          # This ensures our fork is always up-to-date before creating release branches
-          echo "🔄 Syncing fork with upstream..."
-          git checkout ${{ env.COMMUNITY_REPO_BRANCH }}
-          git reset --hard upstream/${{ env.COMMUNITY_REPO_BRANCH }}
-          
-          DRY_RUN="${{ github.event.inputs.dry_run }}"
-          if [ "$DRY_RUN" != "true" ]; then
-            git push origin ${{ env.COMMUNITY_REPO_BRANCH }} --force
-            echo "✅ Fork synced with upstream"
-          else
-            echo "⏭️ Dry run - skipping fork sync push"
-          fi
 
       - name: Copy bundle to community operators
         run: |
