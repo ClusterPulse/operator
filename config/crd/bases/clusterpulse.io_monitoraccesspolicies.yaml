@@ -251,6 +251,115 @@ spec:
                                           items:
                                             type: string
                                           description: Namespaces where pods are visible
+                                
+                                # Custom resources defined by MetricSource CRDs
+                                custom:
+                                  type: object
+                                  description: |
+                                    Custom resource filters keyed by resourceTypeName from MetricSource.
+                                    Each key maps to a filter configuration for that resource type.
+                                  additionalProperties:
+                                    type: object
+                                    description: Filter configuration for a custom resource type
+                                    properties:
+                                      visibility:
+                                        type: string
+                                        enum: ["all", "none", "filtered"]
+                                        default: "all"
+                                        description: Visibility level for this custom resource type
+                                      filters:
+                                        type: object
+                                        description: Filter criteria for custom resources
+                                        properties:
+                                          namespaces:
+                                            type: object
+                                            description: Namespace-based filtering
+                                            properties:
+                                              allowed:
+                                                type: array
+                                                items:
+                                                  type: string
+                                                description: Allowed namespace patterns (supports wildcards)
+                                              denied:
+                                                type: array
+                                                items:
+                                                  type: string
+                                                description: Denied namespace patterns
+                                          names:
+                                            type: object
+                                            description: Resource name filtering
+                                            properties:
+                                              allowed:
+                                                type: array
+                                                items:
+                                                  type: string
+                                                description: Allowed name patterns
+                                              denied:
+                                                type: array
+                                                items:
+                                                  type: string
+                                                description: Denied name patterns
+                                          fields:
+                                            type: object
+                                            description: |
+                                              Field-based filters keyed by field name.
+                                              Only fields listed in MetricSource rbac.filterableFields can be filtered.
+                                            additionalProperties:
+                                              type: object
+                                              description: Filter for a specific field
+                                              properties:
+                                                allowed:
+                                                  type: array
+                                                  description: Allowed values or patterns
+                                                  items:
+                                                    x-kubernetes-int-or-string: true
+                                                denied:
+                                                  type: array
+                                                  description: Denied values or patterns
+                                                  items:
+                                                    x-kubernetes-int-or-string: true
+                                                conditions:
+                                                  type: array
+                                                  description: Operator-based filter conditions
+                                                  items:
+                                                    type: object
+                                                    required:
+                                                    - operator
+                                                    - value
+                                                    properties:
+                                                      operator:
+                                                        type: string
+                                                        enum:
+                                                        - equals
+                                                        - notEquals
+                                                        - contains
+                                                        - startsWith
+                                                        - endsWith
+                                                        - greaterThan
+                                                        - lessThan
+                                                        - in
+                                                        - notIn
+                                                        - matches
+                                                        description: Comparison operator
+                                                      value:
+                                                        x-kubernetes-int-or-string: true
+                                                        description: Value to compare against
+                                      aggregations:
+                                        type: object
+                                        description: Control which aggregations are visible
+                                        properties:
+                                          include:
+                                            type: array
+                                            items:
+                                              type: string
+                                            description: |
+                                              Only show these aggregations.
+                                              Takes precedence over exclude.
+                                          exclude:
+                                            type: array
+                                            items:
+                                              type: string
+                                            description: Hide these aggregations
                   
               # WHEN - Temporal constraints
               lifecycle:
@@ -284,7 +393,7 @@ spec:
                         default: false
                         description: Require reason for access
           
-          # Status remains unchanged
+          # Status
           status:
             type: object
             properties:
@@ -307,10 +416,18 @@ spec:
                 type: integer
               affectedServiceAccounts:
                 type: integer
+              customResourceTypes:
+                type: integer
+                description: Number of custom resource types referenced by this policy
               hash:
                 type: string
               message:
                 type: string
+              customResourceWarnings:
+                type: array
+                items:
+                  type: string
+                description: Warnings about custom resource references
               conditions:
                 type: array
                 items:
@@ -350,6 +467,10 @@ spec:
     - name: Groups
       type: integer
       jsonPath: .status.affectedGroups
+    - name: Custom
+      type: integer
+      jsonPath: .status.customResourceTypes
+      description: Number of custom resource types
     - name: Age
       type: date
       jsonPath: .metadata.creationTimestamp
