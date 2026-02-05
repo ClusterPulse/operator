@@ -221,46 +221,46 @@ jobs:
           echo "✅ Created release-config.yml:"
           cat "${VERSION_DIR}/release-config.yml"
 
-      - name: Install yq
-        uses: mikefarah/yq@v4
+#      - name: Install yq
+#        uses: mikefarah/yq@v4
 
-      - name: Update semver.yaml catalog template
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          OPERATOR_DIR="community-operators/operators/${{ env.OPERATOR_NAME }}"
-          SEMVER_FILE="${OPERATOR_DIR}/catalog-templates/semver.yaml"
-          NEW_IMAGE="${{ env.BUNDLE_IMAGE_REGISTRY }}/${{ env.OPERATOR_NAME }}:${VERSION}"
-          
-          # Create catalog-templates directory if it doesn't exist
-          mkdir -p "${OPERATOR_DIR}/catalog-templates"
-          
-          if [ -f "$SEMVER_FILE" ]; then
-            echo "📝 Updating existing semver.yaml"
-            
-            # Check if image already exists
-            if yq ".Fast.Bundles[].Image" "$SEMVER_FILE" | grep -q "$NEW_IMAGE"; then
-              echo "⚠️ Image $NEW_IMAGE already exists in semver.yaml"
-            else
-              # Append new image to the Bundles array (newest first)
-              #yq -i ".Fast.Bundles = [{\"Image\": \"$NEW_IMAGE\"}] + .Fast.Bundles" "$SEMVER_FILE"
-              yq -i ".Fast.Bundles = .Fast.Bundles + [{\"Image\": \"$NEW_IMAGE\"}]" "$SEMVER_FILE"
-              echo "✅ Added image: $NEW_IMAGE"
-            fi
-          else
-            echo "📝 Creating new semver.yaml"
-            printf '%s\n' \
-              "---" \
-              "Schema: olm.semver" \
-              "GenerateMajorChannels: true" \
-              "GenerateMinorChannels: false" \
-              "Fast:" \
-              "  Bundles:" \
-              "    - Image: ${NEW_IMAGE}" \
-              > "$SEMVER_FILE"
-          fi
-          
-          echo "📄 Current semver.yaml:"
-          cat "$SEMVER_FILE"
+#      - name: Update semver.yaml catalog template
+#        run: |
+#          VERSION="${{ steps.version.outputs.version }}"
+#          OPERATOR_DIR="community-operators/operators/${{ env.OPERATOR_NAME }}"
+#          SEMVER_FILE="${OPERATOR_DIR}/catalog-templates/semver.yaml"
+#          NEW_IMAGE="${{ env.BUNDLE_IMAGE_REGISTRY }}/${{ env.OPERATOR_NAME }}:${VERSION}"
+#          
+#          # Create catalog-templates directory if it doesn't exist
+#          mkdir -p "${OPERATOR_DIR}/catalog-templates"
+#          
+#          if [ -f "$SEMVER_FILE" ]; then
+#            echo "📝 Updating existing semver.yaml"
+#            
+#            # Check if image already exists
+#            if yq ".Fast.Bundles[].Image" "$SEMVER_FILE" | grep -q "$NEW_IMAGE"; then
+#              echo "⚠️ Image $NEW_IMAGE already exists in semver.yaml"
+#            else
+#              # Append new image to the Bundles array (newest first)
+#              #yq -i ".Fast.Bundles = [{\"Image\": \"$NEW_IMAGE\"}] + .Fast.Bundles" "$SEMVER_FILE"
+#              yq -i ".Fast.Bundles = .Fast.Bundles + [{\"Image\": \"$NEW_IMAGE\"}]" "$SEMVER_FILE"
+#              echo "✅ Added image: $NEW_IMAGE"
+#            fi
+#          else
+#            echo "📝 Creating new semver.yaml"
+#            printf '%s\n' \
+#              "---" \
+#              "Schema: olm.semver" \
+#              "GenerateMajorChannels: true" \
+#              "GenerateMinorChannels: false" \
+#              "Fast:" \
+#              "  Bundles:" \
+#              "    - Image: ${NEW_IMAGE}" \
+#              > "$SEMVER_FILE"
+#          fi
+#          
+#          echo "📄 Current semver.yaml:"
+#          cat "$SEMVER_FILE"
 
       - name: Configure Git for signed commits
         run: |
