@@ -1,7 +1,7 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: monitoraccesspolicies.clusterpulse.io
+  name: registryconnections.clusterpulse.io
 spec:
   group: clusterpulse.io
   versions:
@@ -11,354 +11,145 @@ spec:
     schema:
       openAPIV3Schema:
         type: object
-        required:
-        - spec
         properties:
+          apiVersion:
+            type: string
+          kind:
+            type: string
+          metadata:
+            type: object
           spec:
             type: object
             required:
-            - identity
-            - access
-            - scope
+            - endpoint
             properties:
-              # WHO - Identity & Priority
-              identity:
+              displayName:
+                type: string
+                description: Human-friendly name for the registry
+              endpoint:
+                type: string
+                description: Registry endpoint URL
+              type:
+                type: string
+                description: Optional type identifier for the registry (informational only)
+              credentialsRef:
                 type: object
-                required:
-                - subjects
+                description: Reference to secret containing credentials
                 properties:
-                  priority:
-                    type: integer
-                    default: 100
-                    minimum: 1
-                    maximum: 10000
-                    description: Higher priority policies are evaluated first
-                    
-                  subjects:
-                    type: object
-                    minProperties: 1
-                    properties:
-                      users:
-                        type: array
-                        items:
-                          type: string
-                          pattern: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?$'
-                        description: List of usernames or email addresses
-                      groups:
-                        type: array
-                        items:
-                          type: string
-                        description: List of group names
-                      serviceAccounts:
-                        type: array
-                        items:
-                          type: object
-                          required:
-                          - name
-                          properties:
-                            name:
-                              type: string
-                              description: Service account name
-                            namespace:
-                              type: string
-                              default: default
-                              description: Service account namespace
-              
-              # WHAT - Core access control
-              access:
-                type: object
-                required:
-                - effect
-                properties:
-                  effect:
+                  name:
                     type: string
-                    enum: ["Allow", "Deny"]
-                    description: Allow or Deny access
-                    
-                  enabled:
-                    type: boolean
-                    default: true
-                    description: Whether this policy is active
-              
-              # WHERE - Scope of access
-              scope:
-                type: object
+                    description: Name of the secret
+                  namespace:
+                    type: string
+                    description: Namespace of the secret
                 required:
-                - clusters
-                properties:
-                  clusters:
-                    type: object
-                    properties:
-                      default:
-                        type: string
-                        enum: ["allow", "deny", "none"]
-                        default: "none"
-                        description: Default access for clusters not matching any rule
-                        
-                      rules:
-                        type: array
-                        items:
-                          type: object
-                          required:
-                          - selector
-                          properties:
-                            selector:
-                              type: object
-                              minProperties: 1
-                              properties:
-                                matchNames:
-                                  type: array
-                                  items:
-                                    type: string
-                                  description: Exact cluster names or patterns with wildcards
-                                matchLabels:
-                                  type: object
-                                  additionalProperties:
-                                    type: string
-                                  description: Label selector for clusters
-                                matchPattern:
-                                  type: string
-                                  description: Regex pattern for cluster names
-                            
-                            permissions:
-                              type: object
-                              properties:
-                                view:
-                                  type: boolean
-                                  default: true
-                                  description: Can view basic cluster information
-                                viewMetrics:
-                                  type: boolean
-                                  default: false
-                                  description: Can view cluster-wide metrics (CPU, memory, pod counts)
-                                viewSensitive:
-                                  type: boolean
-                                  default: false
-                                  description: Can view sensitive information
-                                viewCosts:
-                                  type: boolean
-                                  default: false
-                                  description: Can view cost metrics
-                                viewSecrets:
-                                  type: boolean
-                                  default: false
-                                  description: Can view secret references
-                                viewMetadata:
-                                  type: boolean
-                                  default: false
-                                  description: Can view metadata about filtered resources (total counts, what's hidden)
-                                viewAuditInfo:
-                                  type: boolean
-                                  default: false
-                                  description: Can view audit and policy information
-                            
-                            resources:
-                              type: object
-                              properties:
-                                nodes:
-                                  type: object
-                                  properties:
-                                    visibility:
-                                      type: string
-                                      enum: ["all", "none", "filtered"]
-                                      default: "all"
-                                      description: Node visibility level
-                                    filters:
-                                      type: object
-                                      properties:
-                                        labelSelector:
-                                          type: object
-                                          additionalProperties:
-                                            type: string
-                                          description: Label selector for nodes
-                                        hideMasters:
-                                          type: boolean
-                                          default: false
-                                          description: Hide master/control plane nodes
-                                        hideByLabels:
-                                          type: object
-                                          additionalProperties:
-                                            type: string
-                                          description: Hide nodes with specific labels
-                                
-                                operators:
-                                  type: object
-                                  properties:
-                                    visibility:
-                                      type: string
-                                      enum: ["all", "none", "filtered"]
-                                      default: "all"
-                                      description: Operator visibility level
-                                    filters:
-                                      type: object
-                                      properties:
-                                        allowedNamespaces:
-                                          type: array
-                                          items:
-                                            type: string
-                                          description: Namespaces where operators are visible
-                                        deniedNamespaces:
-                                          type: array
-                                          items:
-                                            type: string
-                                          description: Namespaces where operators are hidden
-                                        allowedNames:
-                                          type: array
-                                          items:
-                                            type: string
-                                          description: Specific operator names to show
-                                        deniedNames:
-                                          type: array
-                                          items:
-                                            type: string
-                                          description: Specific operator names to hide
-                                
-                                namespaces:
-                                  type: object
-                                  properties:
-                                    visibility:
-                                      type: string
-                                      enum: ["all", "none", "filtered"]
-                                      default: "all"
-                                      description: Namespace visibility level
-                                    filters:
-                                      type: object
-                                      properties:
-                                        allowed:
-                                          type: array
-                                          items:
-                                            type: string
-                                          description: Allowed namespace names or patterns
-                                        denied:
-                                          type: array
-                                          items:
-                                            type: string
-                                          description: Denied namespace names or patterns
-                                
-                                pods:
-                                  type: object
-                                  properties:
-                                    visibility:
-                                      type: string
-                                      enum: ["all", "none", "filtered"]
-                                      default: "all"
-                                      description: Pod visibility level
-                                    filters:
-                                      type: object
-                                      properties:
-                                        allowedNamespaces:
-                                          type: array
-                                          items:
-                                            type: string
-                                          description: Namespaces where pods are visible
-                  
-              # WHEN - Temporal constraints
-              lifecycle:
+                - name
+              insecure:
+                type: boolean
+                description: Allow insecure HTTP connections
+                default: false
+              skipTLSVerify:
+                type: boolean
+                description: Skip TLS certificate verification
+                default: false
+              monitoring:
                 type: object
                 properties:
-                  validity:
-                    type: object
-                    properties:
-                      notBefore:
-                        type: string
-                        format: date-time
-                        description: Policy is not valid before this time
-                      notAfter:
-                        type: string
-                        format: date-time
-                        description: Policy expires after this time
-              
-              # HOW - Operational aspects
-              operations:
+                  interval:
+                    type: integer
+                    description: Check interval in seconds
+                    minimum: 30
+                    default: 60
+                  timeout:
+                    type: integer
+                    description: Request timeout in seconds
+                    minimum: 5
+                    default: 10
+                  checkCatalog:
+                    type: boolean
+                    description: Enable catalog endpoint checking
+                    default: false
+                  maxCatalogEntries:
+                    type: integer
+                    description: Maximum catalog entries to fetch
+                    minimum: 1
+                    maximum: 1000
+                    default: 100
+              labels:
                 type: object
-                properties:
-                  audit:
-                    type: object
-                    properties:
-                      logAccess:
-                        type: boolean
-                        default: false
-                        description: Log all access attempts using this policy
-                      requireReason:
-                        type: boolean
-                        default: false
-                        description: Require reason for access
-          
-          # Status remains unchanged
+                additionalProperties:
+                  type: string
+                description: Labels for registry categorization
+              healthCheckPaths:
+                type: array
+                items:
+                  type: string
+                description: Additional paths to check for health
+                default:
+                - "/v2/"
           status:
             type: object
             properties:
-              state:
+              phase:
                 type: string
-                enum: ["Active", "Inactive", "Error", "Pending", "Expired"]
-                default: "Pending"
-              compiledAt:
+                description: Current phase (Connecting, Connected, Error, Unknown)
+              health:
+                type: string
+                description: Health status (healthy, degraded, unhealthy, unknown)
+              available:
+                type: boolean
+                description: Whether registry is reachable
+              lastCheckTime:
                 type: string
                 format: date-time
-              lastEvaluated:
-                type: string
-                format: date-time
-              evaluationCount:
+                description: Last health check timestamp
+              responseTime:
                 type: integer
-                default: 0
-              affectedUsers:
-                type: integer
-              affectedGroups:
-                type: integer
-              affectedServiceAccounts:
-                type: integer
-              hash:
-                type: string
+                description: Response time in milliseconds
               message:
                 type: string
-              conditions:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type:
-                      type: string
-                    status:
-                      type: string
-                    lastTransitionTime:
-                      type: string
-                      format: date-time
-                    reason:
-                      type: string
-                    message:
-                      type: string
-    
+                description: Status message
+              repositoryCount:
+                type: integer
+                description: Number of repositories (if catalog enabled)
+              version:
+                type: string
+                description: Registry version
+              features:
+                type: object
+                additionalProperties:
+                  type: boolean
+                description: Detected registry features
     subresources:
       status: {}
-    
     additionalPrinterColumns:
-    - name: Effect
+    - name: Display Name
       type: string
-      jsonPath: .spec.access.effect
-    - name: Priority
-      type: integer
-      jsonPath: .spec.identity.priority
-    - name: Enabled
+      jsonPath: .spec.displayName
+    - name: Endpoint
+      type: string
+      jsonPath: .spec.endpoint
+    - name: Type
+      type: string
+      jsonPath: .spec.type
+    - name: Available
       type: boolean
-      jsonPath: .spec.access.enabled
-    - name: State
+      jsonPath: .status.available
+    - name: Health
       type: string
-      jsonPath: .status.state
-    - name: Users
+      jsonPath: .status.health
+    - name: Response Time
       type: integer
-      jsonPath: .status.affectedUsers
-    - name: Groups
-      type: integer
-      jsonPath: .status.affectedGroups
+      jsonPath: .status.responseTime
+      description: Response time in ms
     - name: Age
       type: date
       jsonPath: .metadata.creationTimestamp
-      
   scope: Namespaced
   names:
-    plural: monitoraccesspolicies
-    singular: monitoraccesspolicy
-    kind: MonitorAccessPolicy
+    plural: registryconnections
+    singular: registryconnection
+    kind: RegistryConnection
     shortNames:
-    - map
-    - policy
+    - rc
+    - regcon
