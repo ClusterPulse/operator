@@ -204,7 +204,7 @@ jobs:
           echo "✅ Bundle contents copied"
           ls -la "$VERSION_DIR/"
 
-      - name: Create release-config.yml
+      - name: Create release-config.yaml
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           VERSION_DIR="community-operators/operators/${{ env.OPERATOR_NAME }}/${VERSION}"
@@ -216,10 +216,10 @@ jobs:
             "  - template_name: semver.yaml" \
             "    channels:" \
             "      - ${CHANNELS}" \
-            > "${VERSION_DIR}/release-config.yml"
+            > "${VERSION_DIR}/release-config.yaml"
           
-          echo "✅ Created release-config.yml:"
-          cat "${VERSION_DIR}/release-config.yml"
+          echo "✅ Created release-config.yaml:"
+          cat "${VERSION_DIR}/release-config.yaml"
 
 #      - name: Install yq
 #        uses: mikefarah/yq@v4
