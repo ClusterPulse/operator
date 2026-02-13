@@ -48,6 +48,26 @@ rules:
   - update
   - patch
 
+# MetricSource Permissions
+- apiGroups:
+  - clusterpulse.io
+  resources:
+  - metricsources
+  verbs:
+  - get
+  - list
+  - watch
+  - patch
+
+- apiGroups:
+  - clusterpulse.io
+  resources:
+  - metricsources/status
+  verbs:
+  - get
+  - update
+  - patch
+
 # Permissions to read secrets (for cluster credentials)
 - apiGroups:
   - ""
