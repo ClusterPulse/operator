@@ -44,12 +44,12 @@ ClusterPulse is a Helm-based Operator built with the Operator SDK that provides 
 │                       │ Deploys                                   │
 │         ┌─────────────┼─────────────┬──────────────┬────────┐     │
 │         ▼             ▼             ▼              ▼        ▼     │
-│  ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────┐ ┌─────┐  │
-│  │Frontend UI │ │  API       │ │  Cluster   │ │Policy  │ │Redis│  │
-│  │  + OAuth   │ │  Backend   │ │ Controller │ │Engine  │ │     │  │
-│  └────────────┘ └────────────┘ └────────────┘ └────────┘ └─────┘  │
-│         │             │             │              │        │     │
-│         └─────────────┴─────────────┼──────────────┴────────┘     │
+│  ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌─────┐             │
+│  │Frontend UI │ │  API       │ │  Cluster   │ │Redis│             │
+│  │  + OAuth   │ │  Backend   │ │ Controller │ │     │             │
+│  └────────────┘ └────────────┘ └────────────┘ └─────┘             │
+│         │             │             │              │               │
+│         └─────────────┴─────────────┼──────────────┘               │
 │                                     │                             │
 │  ┌──────────────────────────────────▼──────────────────────────┐  │
 │  │         Custom Resources (CRDs)                             │  │
@@ -69,10 +69,10 @@ ClusterPulse is a Helm-based Operator built with the Operator SDK that provides 
 1. **Operator Deployment**: OLM installs the ClusterPulse operator
 2. **CR Creation**: User creates a `ClusterPulse` custom resource
 3. **Helm Rendering**: Operator renders Helm charts based on CR spec
-4. **Component Deployment**: Deploys UI, API, controllers, and Redis
+4. **Component Deployment**: Deploys UI, API, cluster controller, and Redis
 5. **CRD Management**: Users create ClusterConnection/RegistryConnection resources
-6. **Data Collection**: Controllers connect to target clusters and collect metrics
-7. **Policy Enforcement**: Policy engine evaluates MonitorAccessPolicy CRs
+6. **Data Collection**: Cluster controller connects to target clusters and collects metrics
+7. **Policy Enforcement**: Cluster controller evaluates MonitorAccessPolicy CRs
 8. **Data Storage**: Metrics stored in Redis
 9. **API Access**: Frontend queries API with OAuth authentication
 10. **RBAC Filtering**: API filters data based on user permissions
@@ -135,13 +135,16 @@ api:
 
 ### Cluster Controller
 
-Kubernetes operator for managing cluster and registry connections.
+Kubernetes operator for managing cluster connections, registry connections, and RBAC policy enforcement.
 
 **Features**:
 - Reconciles ClusterConnection CRs
 - Reconciles RegistryConnection CRs
+- Reconciles MonitorAccessPolicy CRs
 - Collects cluster metrics and health
 - Discovers installed operators
+- Compiles policies for fast evaluation
+- Manages Redis policy storage
 - Stores data in Redis
 
 **Configuration**:
@@ -152,25 +155,10 @@ clusterEngine:
     reconciliationInterval: "30"
     nodeMetricsInterval: "15"
     operatorScanInterval: "300"
-```
-
-### Policy Controller
-
-Python-based controller for RBAC policy management.
-
-**Features**:
-- Reconciles MonitorAccessPolicy CRs
-- Compiles policies for fast evaluation
-- Manages Redis policy storage
-- Handles cache invalidation
-
-**Configuration**:
-```yaml
-policyEngine:
-  replicas: 1
-  cache:
-    policyCacheTTL: 300
-    groupCacheTTL: 300
+  policy:
+    cache:
+      policyCacheTTL: 300
+      groupCacheTTL: 300
 ```
 
 ## Custom Resource Definitions
@@ -203,10 +191,6 @@ spec:
     replicas: 1
     timing:
       reconciliationInterval: "30"
-  
-  policyEngine:
-    enabled: true
-    replicas: 1
 ```
 
 ### ClusterConnection
@@ -495,12 +479,7 @@ frontend:
     enabled: true
     provider: openshift
     
-# Cluster controller
+# Cluster controller (includes policy engine)
 clusterEngine:
-  replicas: 1
-  
-# Policy engine
-policyEngine:
-  enabled: true
   replicas: 1
 ```

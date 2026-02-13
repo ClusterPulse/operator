@@ -74,7 +74,23 @@ spec:
         # Logging
         - name: LOG_LEVEL
           value: {{ (((.Values.clusterEngine).logging).level) | default "INFO" | quote }}
-        
+
+        # Policy engine configuration
+        - name: POLICY_CACHE_TTL
+          value: {{ ((((.Values.clusterEngine).policy).cache).policyCacheTTL) | default "300" | quote }}
+        - name: GROUP_CACHE_TTL
+          value: {{ ((((.Values.clusterEngine).policy).cache).groupCacheTTL) | default "300" | quote }}
+        - name: MAX_POLICIES_PER_USER
+          value: {{ ((((.Values.clusterEngine).policy).limits).maxPoliciesPerUser) | default "100" | quote }}
+        - name: POLICY_VALIDATION_INTERVAL
+          value: {{ ((((.Values.clusterEngine).policy).limits).policyValidationInterval) | default "300" | quote }}
+        - name: REDIS_SCAN_BATCH_SIZE
+          value: {{ ((((.Values.clusterEngine).policy).batch).redisScanBatchSize) | default "100" | quote }}
+        - name: REDIS_PIPELINE_BATCH_SIZE
+          value: {{ ((((.Values.clusterEngine).policy).batch).redisPipelineBatchSize) | default "1000" | quote }}
+        - name: CACHE_CLEAR_BATCH_SIZE
+          value: {{ ((((.Values.clusterEngine).policy).batch).cacheClearBatchSize) | default "500" | quote }}
+
         {{- if (.Values.clusterEngine).extraEnv }}
         {{- toYaml (.Values.clusterEngine).extraEnv | nindent 8 }}
         {{- end }}

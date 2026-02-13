@@ -98,13 +98,24 @@ spec:
         nodeDetails: true
         operatorDetails: true
   
-  # Cluster Engine Configuration
+  # Cluster Engine Configuration (includes policy controller)
   clusterEngine:
     replicas: 1
     timing:
       reconciliationInterval: "30"
       fullScanInterval: "300"
       cacheTTL: "600"
+    policy:
+      cache:
+        policyCacheTTL: 300
+        groupCacheTTL: 300
+      limits:
+        maxPoliciesPerUser: 100
+        policyValidationInterval: 300
+      batch:
+        redisScanBatchSize: 100
+        redisPipelineBatchSize: 1000
+        cacheClearBatchSize: 500
     resources:
       requests:
         memory: "256Mi"
@@ -112,27 +123,3 @@ spec:
       limits:
         memory: "1Gi"
         cpu: "1000m"
-  
-  # Policy Engine Configuration
-  policyEngine:
-    enabled: true
-    replicas: 1
-    cache:
-      policyCacheTTL: 300
-      groupCacheTTL: 300
-    limits:
-      maxPoliciesPerUser: 100
-      policyValidationInterval: 300
-    batch:
-      redisScanBatchSize: 100
-      redisPipelineBatchSize: 1000
-      cacheClearBatchSize: 500
-    logging:
-      level: "INFO"
-    resources:
-      requests:
-        memory: "128Mi"
-        cpu: "50m"
-      limits:
-        memory: "512Mi"
-        cpu: "500m"

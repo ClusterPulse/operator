@@ -1,5 +1,5 @@
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role 
+kind: Role
 metadata:
   name: {{ .Release.Name }}-cluster-controller
 rules:
@@ -28,6 +28,26 @@ rules:
   - update
   - patch
 
+# Policy controller permissions (now integrated)
+- apiGroups:
+  - clusterpulse.io
+  resources:
+  - monitoraccesspolicies
+  verbs:
+  - get
+  - list
+  - watch
+  - patch
+
+- apiGroups:
+  - clusterpulse.io
+  resources:
+  - monitoraccesspolicies/status
+  verbs:
+  - get
+  - update
+  - patch
+
 # Permissions to read secrets (for cluster credentials)
 - apiGroups:
   - ""
@@ -38,7 +58,7 @@ rules:
   - list
   - watch
 
-# Permissions for kopf to store its state
+# Permissions for events
 - apiGroups:
   - ""
   resources:
@@ -47,7 +67,7 @@ rules:
   - create
   - patch
 
-# Permissions for kopf to store operator state (optional but recommended)
+# Permissions for operator state
 - apiGroups:
   - ""
   resources:
@@ -60,3 +80,19 @@ rules:
   - update
   - patch
   - delete
+
+# OpenShift user/group resolution (for policy engine)
+- apiGroups:
+  - user.openshift.io
+  resources:
+  - users
+  verbs:
+  - get
+
+- apiGroups:
+  - user.openshift.io
+  resources:
+  - groups
+  verbs:
+  - get
+  - list

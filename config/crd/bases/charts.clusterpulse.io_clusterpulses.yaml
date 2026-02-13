@@ -37,10 +37,6 @@ spec:
       type: integer
       jsonPath: .spec.clusterEngine.replicas
       description: Cluster controller replicas
-    - name: Policy Engine
-      type: boolean
-      jsonPath: .spec.policyEngine.enabled
-      description: Policy engine enabled
     schema:
       openAPIV3Schema:
         description: ClusterPulse is the Schema for the clusterpulses API
@@ -519,7 +515,7 @@ spec:
                         type: string
                         default: "0.5"
                         description: Node unhealthy threshold (fraction)
-                  
+
                   logging:
                     type: object
                     description: Logging configuration
@@ -529,7 +525,66 @@ spec:
                         default: "INFO"
                         enum: ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
                         description: Log level
-                  
+
+                  policy:
+                    type: object
+                    description: Policy engine configuration (integrated into cluster controller)
+                    properties:
+                      cache:
+                        type: object
+                        description: Cache configuration for policy engine
+                        properties:
+                          policyCacheTTL:
+                            type: integer
+                            default: 300
+                            minimum: 60
+                            maximum: 3600
+                            description: Policy cache TTL in seconds
+                          groupCacheTTL:
+                            type: integer
+                            default: 300
+                            minimum: 60
+                            maximum: 3600
+                            description: Group membership cache TTL in seconds
+                      limits:
+                        type: object
+                        description: Policy engine limits
+                        properties:
+                          maxPoliciesPerUser:
+                            type: integer
+                            default: 100
+                            minimum: 10
+                            maximum: 1000
+                            description: Maximum number of policies per user
+                          policyValidationInterval:
+                            type: integer
+                            default: 300
+                            minimum: 60
+                            maximum: 3600
+                            description: Policy validation interval in seconds
+                      batch:
+                        type: object
+                        description: Batch processing configuration
+                        properties:
+                          redisScanBatchSize:
+                            type: integer
+                            default: 100
+                            minimum: 10
+                            maximum: 1000
+                            description: Redis SCAN batch size
+                          redisPipelineBatchSize:
+                            type: integer
+                            default: 1000
+                            minimum: 100
+                            maximum: 10000
+                            description: Redis pipeline batch size
+                          cacheClearBatchSize:
+                            type: integer
+                            default: 500
+                            minimum: 100
+                            maximum: 5000
+                            description: Cache clear batch size
+
                   resources:
                     type: object
                     description: Resource requests and limits
@@ -631,223 +686,6 @@ spec:
                     description: Pod affinity rules
                     x-kubernetes-preserve-unknown-fields: true
               
-              # Policy Engine Configuration
-              policyEngine:
-                type: object
-                description: Configuration for the policy controller component
-                properties:
-                  enabled:
-                    type: boolean
-                    default: true
-                    description: Enable policy engine deployment
-                  
-                  replicas:
-                    type: integer
-                    default: 1
-                    minimum: 1
-                    maximum: 3
-                    description: Number of policy controller replicas
-                  
-                  image:
-                    type: string
-                    description: Docker image for policy controller
-                  
-                  imagePullPolicy:
-                    type: string
-                    default: "Always"
-                    enum: ["Always", "IfNotPresent", "Never"]
-                    description: Image pull policy
-                  
-                  redis:
-                    type: object
-                    description: Redis connection configuration for policy engine
-                    properties:
-                      host:
-                        type: string
-                        description: Redis host (defaults to release-name-redis-master)
-                      port:
-                        type: string
-                        default: "6379"
-                        description: Redis port
-                      passwordSecret:
-                        type: string
-                        description: Name of secret containing Redis password
-                      passwordKey:
-                        type: string
-                        default: "redis-password"
-                        description: Key in secret containing Redis password
-                      db:
-                        type: string
-                        description: Redis database number
-                  
-                  cache:
-                    type: object
-                    description: Cache configuration for policy engine
-                    properties:
-                      policyCacheTTL:
-                        type: integer
-                        default: 300
-                        minimum: 60
-                        maximum: 3600
-                        description: Policy cache TTL in seconds
-                      groupCacheTTL:
-                        type: integer
-                        default: 300
-                        minimum: 60
-                        maximum: 3600
-                        description: Group membership cache TTL in seconds
-                  
-                  limits:
-                    type: object
-                    description: Policy engine limits
-                    properties:
-                      maxPoliciesPerUser:
-                        type: integer
-                        default: 100
-                        minimum: 10
-                        maximum: 1000
-                        description: Maximum number of policies per user
-                      policyValidationInterval:
-                        type: integer
-                        default: 300
-                        minimum: 60
-                        maximum: 3600
-                        description: Policy validation interval in seconds
-                  
-                  batch:
-                    type: object
-                    description: Batch processing configuration
-                    properties:
-                      redisScanBatchSize:
-                        type: integer
-                        default: 100
-                        minimum: 10
-                        maximum: 1000
-                        description: Redis SCAN batch size
-                      redisPipelineBatchSize:
-                        type: integer
-                        default: 1000
-                        minimum: 100
-                        maximum: 10000
-                        description: Redis pipeline batch size
-                      cacheClearBatchSize:
-                        type: integer
-                        default: 500
-                        minimum: 100
-                        maximum: 5000
-                        description: Cache clear batch size
-                  
-                  logging:
-                    type: object
-                    description: Logging configuration
-                    properties:
-                      level:
-                        type: string
-                        default: "INFO"
-                        enum: ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
-                        description: Log level
-                  
-                  resources:
-                    type: object
-                    description: Resource requests and limits
-                    properties:
-                      requests:
-                        type: object
-                        properties:
-                          memory:
-                            type: string
-                            default: "128Mi"
-                            description: Memory request
-                          cpu:
-                            type: string
-                            default: "50m"
-                            description: CPU request
-                      limits:
-                        type: object
-                        properties:
-                          memory:
-                            type: string
-                            default: "512Mi"
-                            description: Memory limit
-                          cpu:
-                            type: string
-                            default: "500m"
-                            description: CPU limit
-                  
-                  probes:
-                    type: object
-                    description: Liveness and readiness probe configuration
-                    properties:
-                      liveness:
-                        type: object
-                        properties:
-                          initialDelaySeconds:
-                            type: integer
-                            default: 10
-                          periodSeconds:
-                            type: integer
-                            default: 30
-                          timeoutSeconds:
-                            type: integer
-                            default: 5
-                          failureThreshold:
-                            type: integer
-                            default: 3
-                      readiness:
-                        type: object
-                        properties:
-                          initialDelaySeconds:
-                            type: integer
-                            default: 5
-                          periodSeconds:
-                            type: integer
-                            default: 10
-                          timeoutSeconds:
-                            type: integer
-                            default: 5
-                          failureThreshold:
-                            type: integer
-                            default: 3
-                  
-                  extraEnv:
-                    type: array
-                    description: Additional environment variables
-                    items:
-                      type: object
-                      x-kubernetes-preserve-unknown-fields: true
-                  
-                  volumeMounts:
-                    type: array
-                    description: Additional volume mounts
-                    items:
-                      type: object
-                      x-kubernetes-preserve-unknown-fields: true
-                  
-                  volumes:
-                    type: array
-                    description: Additional volumes
-                    items:
-                      type: object
-                      x-kubernetes-preserve-unknown-fields: true
-                  
-                  nodeSelector:
-                    type: object
-                    description: Node selector for pod placement
-                    additionalProperties:
-                      type: string
-                  
-                  tolerations:
-                    type: array
-                    description: Pod tolerations
-                    items:
-                      type: object
-                      x-kubernetes-preserve-unknown-fields: true
-                  
-                  affinity:
-                    type: object
-                    description: Pod affinity rules
-                    x-kubernetes-preserve-unknown-fields: true
-
               # Api Configuration
               api:
                 type: object
