@@ -1,0 +1,12 @@
+{{- if and (((.Values.clusterEngine).ingester).enabled) ((((.Values.clusterEngine).ingester).tls).enabled) (not (((.Values.clusterEngine).ingester).tls).useSystemCA) }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ingester-ca
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    service.beta.openshift.io/inject-cabundle: "true"
+  labels:
+    app: clusterpulse
+    component: cluster-controller
+{{- end }}

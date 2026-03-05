@@ -685,7 +685,79 @@ spec:
                     type: object
                     description: Pod affinity rules
                     x-kubernetes-preserve-unknown-fields: true
-              
+
+                  ingester:
+                    type: object
+                    description: Ingester gRPC server configuration
+                    properties:
+                      enabled:
+                        type: boolean
+                        default: false
+                        description: Enable the ingester gRPC server
+                      port:
+                        type: integer
+                        default: 9443
+                        minimum: 1024
+                        maximum: 65535
+                        description: Ingester gRPC listen port
+                      tls:
+                        type: object
+                        description: TLS configuration for the ingester
+                        properties:
+                          enabled:
+                            type: boolean
+                            default: false
+                            description: Enable TLS on the ingester
+                          secretName:
+                            type: string
+                            default: ingester-serving-cert
+                            description: Name of the TLS secret
+                          certPath:
+                            type: string
+                            default: /etc/ingester-tls/tls.crt
+                            description: Path to the TLS certificate
+                          keyPath:
+                            type: string
+                            default: /etc/ingester-tls/tls.key
+                            description: Path to the TLS private key
+                          useSystemCA:
+                            type: boolean
+                            default: false
+                            description: >-
+                              Use the system CA trust store on collectors instead of distributing a
+                              CA ConfigMap. When false (default), the controller distributes the
+                              service-ca bundle to managed clusters. Set to true only if the hub
+                              ingress CA is already in managed clusters' system trust stores.
+                          customCAConfigMap:
+                            type: object
+                            description: >-
+                              Reference to a ConfigMap containing the CA certificate for collector
+                              TLS verification. Only used when useSystemCA is false. The ConfigMap
+                              is read from the hub and distributed to managed clusters.
+                            properties:
+                              name:
+                                type: string
+                                default: ingester-ca
+                                description: Name of the CA ConfigMap
+                              namespace:
+                                type: string
+                                description: Namespace of the CA ConfigMap (defaults to release namespace)
+                              key:
+                                type: string
+                                default: service-ca.crt
+                                description: Key within the ConfigMap containing the CA certificate
+                      route:
+                        type: object
+                        description: OpenShift Route configuration for the ingester
+                        properties:
+                          enabled:
+                            type: boolean
+                            default: false
+                            description: Enable an OpenShift Route for the ingester
+                          host:
+                            type: string
+                            description: Optional custom hostname for the Route
+
               # Api Configuration
               api:
                 type: object

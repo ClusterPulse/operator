@@ -116,6 +116,19 @@ spec:
         redisScanBatchSize: 100
         redisPipelineBatchSize: 1000
         cacheClearBatchSize: 500
+    # ingester:
+    #   enabled: true
+    #   tls:
+    #     enabled: true
+    #     useSystemCA: true  # Collectors use system CA trust store (default)
+    #     # To use a custom CA instead of system CAs:
+    #     # useSystemCA: false
+    #     # customCAConfigMap:
+    #     #   name: my-ca-bundle         # ConfigMap name on the hub
+    #     #   namespace: my-namespace    # Defaults to release namespace
+    #     #   key: ca.crt               # Key containing the CA cert
+    #   route:
+    #     enabled: true
     resources:
       requests:
         memory: "256Mi"

@@ -1,0 +1,23 @@
+{{- if ((.Values.clusterEngine).ingester).enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-ingester
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: clusterpulse
+    component: cluster-controller
+  {{- if (((.Values.clusterEngine).ingester).tls).enabled }}
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: {{ ((((.Values.clusterEngine).ingester).tls).secretName) | default "ingester-serving-cert" }}
+  {{- end }}
+spec:
+  ports:
+  - name: grpc
+    port: {{ (((.Values.clusterEngine).ingester).port) | default 9443 }}
+    targetPort: {{ (((.Values.clusterEngine).ingester).port) | default 9443 }}
+    protocol: TCP
+  selector:
+    app: clusterpulse
+    component: cluster-controller
+{{- end }}

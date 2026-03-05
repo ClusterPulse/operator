@@ -4,6 +4,8 @@ frontend:
   image: quay.io/clusterpulse/ui:v0.2.0
 clusterEngine:
   image: quay.io/clusterpulse/cluster-controller:v0.3.0
+  ingester:
+    enabled: false
 redis:
   image:
     tag: latest
