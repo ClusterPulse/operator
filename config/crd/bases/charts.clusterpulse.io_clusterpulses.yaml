@@ -758,6 +758,20 @@ spec:
                             type: string
                             description: Optional custom hostname for the Route
 
+              # Defaults Configuration
+              defaults:
+                type: object
+                description: Configuration for default resources created on initial install
+                properties:
+                  metricsources:
+                    type: object
+                    description: Default MetricSource resources
+                    properties:
+                      enabled:
+                        type: boolean
+                        default: true
+                        description: Create default MetricSources (PVC capacity, Deployment health) on initial install. These are not permanently reconciled and can be freely deleted.
+
               # Api Configuration
               api:
                 type: object

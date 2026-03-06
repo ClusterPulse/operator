@@ -9,3 +9,6 @@ clusterEngine:
 redis:
   image:
     tag: latest
+defaults:
+  metricsources:
+    enabled: true

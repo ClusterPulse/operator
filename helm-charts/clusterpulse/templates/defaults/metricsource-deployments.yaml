@@ -1,0 +1,80 @@
+{{- if ((.Values.defaults).metricsources).enabled | default true }}
+apiVersion: clusterpulse.io/v1alpha1
+kind: MetricSource
+metadata:
+  name: default-deployment-health
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: clusterpulse
+    component: defaults
+    clusterpulse.io/default: "true"
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  source:
+    apiVersion: apps/v1
+    kind: Deployment
+    scope: Namespaced
+    namespaces:
+      exclude:
+        - "openshift-*"
+        - "kube-*"
+  fields:
+    - name: replicas
+      path: .spec.replicas
+      type: integer
+      default: "1"
+    - name: readyReplicas
+      path: .status.readyReplicas
+      type: integer
+      default: "0"
+    - name: availableReplicas
+      path: .status.availableReplicas
+      type: integer
+      default: "0"
+    - name: unavailableReplicas
+      path: .status.unavailableReplicas
+      type: integer
+      default: "0"
+    - name: updatedReplicas
+      path: .status.updatedReplicas
+      type: integer
+      default: "0"
+  computed:
+    - name: readyPct
+      expression: "round((readyReplicas / max(replicas, 1)) * 100, 1)"
+      type: float
+  aggregations:
+    - name: total_deployments
+      function: count
+    - name: total_desired_replicas
+      function: sum
+      field: replicas
+    - name: total_ready_replicas
+      function: sum
+      field: readyReplicas
+    - name: fully_available
+      function: count
+      filter:
+        field: unavailableReplicas
+        operator: equals
+        value: "0"
+    - name: degraded
+      function: count
+      filter:
+        field: unavailableReplicas
+        operator: greaterThan
+        value: "0"
+    - name: avg_ready_pct
+      function: avg
+      field: readyPct
+  collection:
+    intervalSeconds: 60
+    maxResources: 5000
+  rbac:
+    resourceTypeName: deployment
+    filterableFields:
+      - readyPct
+    filterAggregations: true
+{{- end }}
