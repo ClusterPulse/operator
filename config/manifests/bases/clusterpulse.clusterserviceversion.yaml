@@ -7,6 +7,7 @@ metadata:
     categories: Monitoring
     containerImage: quay.io/clusterpulse/operator
     description: Provides OpenShift cluster health monitoring
+    operatorframework.io/suggested-namespace: clusterpulse
     repository: https://github.com/ClusterPulse/operator
     support: None
   name: clusterpulse.v0.0.0
@@ -329,7 +330,7 @@ spec:
       deployments: null
     strategy: ""
   installModes:
-  - supported: false
+  - supported: true
     type: OwnNamespace
   - supported: false
     type: SingleNamespace

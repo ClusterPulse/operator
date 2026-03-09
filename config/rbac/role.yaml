@@ -103,4 +103,20 @@ rules:
   - patch
   - delete
 
+###
+# So that the operator can manage MetricSource hook resources
+###
+- apiGroups:
+  - clusterpulse.io
+  resources:
+  - metricsources
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+
 # +kubebuilder:scaffold:rules
