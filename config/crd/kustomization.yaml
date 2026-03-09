@@ -6,4 +6,5 @@ resources:
 - bases/clusterpulse.io_clusterconnections.yaml
 - bases/clusterpulse.io_monitoraccesspolicies.yaml
 - bases/clusterpulse.io_registryconnections.yaml
+- bases/clusterpulse.io_metricsources.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
