@@ -6,7 +6,7 @@
 *.so
 *.dylib
 bin
-bundle
+bundle*
 
 # editor and IDE paraphernalia
 .idea
