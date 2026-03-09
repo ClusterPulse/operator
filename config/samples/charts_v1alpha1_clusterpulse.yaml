@@ -98,13 +98,37 @@ spec:
         nodeDetails: true
         operatorDetails: true
   
-  # Cluster Engine Configuration
+  # Cluster Engine Configuration (includes policy controller)
   clusterEngine:
     replicas: 1
     timing:
       reconciliationInterval: "30"
       fullScanInterval: "300"
       cacheTTL: "600"
+    policy:
+      cache:
+        policyCacheTTL: 300
+        groupCacheTTL: 300
+      limits:
+        maxPoliciesPerUser: 100
+        policyValidationInterval: 300
+      batch:
+        redisScanBatchSize: 100
+        redisPipelineBatchSize: 1000
+        cacheClearBatchSize: 500
+    # ingester:
+    #   enabled: true
+    #   tls:
+    #     enabled: true
+    #     useSystemCA: true  # Collectors use system CA trust store (default)
+    #     # To use a custom CA instead of system CAs:
+    #     # useSystemCA: false
+    #     # customCAConfigMap:
+    #     #   name: my-ca-bundle         # ConfigMap name on the hub
+    #     #   namespace: my-namespace    # Defaults to release namespace
+    #     #   key: ca.crt               # Key containing the CA cert
+    #   route:
+    #     enabled: true
     resources:
       requests:
         memory: "256Mi"
@@ -112,27 +136,3 @@ spec:
       limits:
         memory: "1Gi"
         cpu: "1000m"
-  
-  # Policy Engine Configuration
-  policyEngine:
-    enabled: true
-    replicas: 1
-    cache:
-      policyCacheTTL: 300
-      groupCacheTTL: 300
-    limits:
-      maxPoliciesPerUser: 100
-      policyValidationInterval: 300
-    batch:
-      redisScanBatchSize: 100
-      redisPipelineBatchSize: 1000
-      cacheClearBatchSize: 500
-    logging:
-      level: "INFO"
-    resources:
-      requests:
-        memory: "128Mi"
-        cpu: "50m"
-      limits:
-        memory: "512Mi"
-        cpu: "500m"

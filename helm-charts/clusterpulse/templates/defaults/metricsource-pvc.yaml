@@ -1,0 +1,78 @@
+{{- if ((.Values.defaults).metricsources).enabled | default true }}
+apiVersion: clusterpulse.io/v1alpha1
+kind: MetricSource
+metadata:
+  name: default-pvc-capacity
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: clusterpulse
+    component: defaults
+    clusterpulse.io/default: "true"
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  source:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    scope: Namespaced
+    namespaces:
+      exclude:
+        - "openshift-*"
+        - "kube-*"
+  fields:
+    - name: phase
+      path: .status.phase
+      type: string
+    - name: capacity
+      path: .status.capacity.storage
+      type: quantity
+    - name: requested
+      path: .spec.resources.requests.storage
+      type: quantity
+    - name: storageClass
+      path: .spec.storageClassName
+      type: string
+    - name: accessMode
+      path: .spec.accessModes[0]
+      type: string
+    - name: volumeMode
+      path: .spec.volumeMode
+      type: string
+      default: "Filesystem"
+  computed:
+    - name: capacityGB
+      expression: "round(capacity / 1073741824, 2)"
+      type: float
+  aggregations:
+    - name: total_pvcs
+      function: count
+    - name: total_capacity_bytes
+      function: sum
+      field: capacity
+    - name: bound_count
+      function: count
+      filter:
+        field: phase
+        operator: equals
+        value: Bound
+    - name: pending_count
+      function: count
+      filter:
+        field: phase
+        operator: equals
+        value: Pending
+    - name: by_storage_class
+      function: count
+      groupBy: storageClass
+  collection:
+    intervalSeconds: 120
+    maxResources: 10000
+  rbac:
+    resourceTypeName: pvc
+    filterableFields:
+      - storageClass
+      - phase
+      - accessMode
+    filterAggregations: true
+{{- end }}

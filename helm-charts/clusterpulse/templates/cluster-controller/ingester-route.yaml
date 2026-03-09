@@ -1,0 +1,22 @@
+{{- if and (((.Values.clusterEngine).ingester).enabled) ((((.Values.clusterEngine).ingester).route).enabled) }}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ .Release.Name }}-ingester
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: clusterpulse
+    component: cluster-controller
+spec:
+  {{- if ((((.Values.clusterEngine).ingester).route).host) }}
+  host: {{ .Values.clusterEngine.ingester.route.host }}
+  {{- end }}
+  port:
+    targetPort: grpc
+  tls:
+    termination: passthrough
+  to:
+    kind: Service
+    name: {{ .Release.Name }}-ingester
+    weight: 100
+{{- end }}

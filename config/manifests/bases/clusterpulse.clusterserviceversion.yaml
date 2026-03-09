@@ -66,11 +66,6 @@ spec:
         path: frontend
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: Policy engine configuration for access control
-        displayName: Policy Engine Configuration
-        path: policyEngine
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: Enable Redis deployment for data storage
         displayName: Enable Redis
         path: redis.enabled
@@ -114,21 +109,6 @@ spec:
       - description: Docker image for cluster controller
         displayName: Cluster Controller Image
         path: clusterEngine.image
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Enable policy engine deployment
-        displayName: Enable Policy Engine
-        path: policyEngine.enabled
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: Number of policy engine replicas
-        displayName: Policy Engine Replicas
-        path: policyEngine.replicas
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:podCount
-      - description: Docker image for policy engine
-        displayName: Policy Engine Image
-        path: policyEngine.image
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:text
       statusDescriptors:

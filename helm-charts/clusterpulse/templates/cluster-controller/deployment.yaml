@@ -74,7 +74,53 @@ spec:
         # Logging
         - name: LOG_LEVEL
           value: {{ (((.Values.clusterEngine).logging).level) | default "INFO" | quote }}
-        
+
+        # Policy engine configuration
+        - name: POLICY_CACHE_TTL
+          value: {{ ((((.Values.clusterEngine).policy).cache).policyCacheTTL) | default "300" | quote }}
+        - name: GROUP_CACHE_TTL
+          value: {{ ((((.Values.clusterEngine).policy).cache).groupCacheTTL) | default "300" | quote }}
+        - name: MAX_POLICIES_PER_USER
+          value: {{ ((((.Values.clusterEngine).policy).limits).maxPoliciesPerUser) | default "100" | quote }}
+        - name: POLICY_VALIDATION_INTERVAL
+          value: {{ ((((.Values.clusterEngine).policy).limits).policyValidationInterval) | default "300" | quote }}
+        - name: REDIS_SCAN_BATCH_SIZE
+          value: {{ ((((.Values.clusterEngine).policy).batch).redisScanBatchSize) | default "100" | quote }}
+        - name: REDIS_PIPELINE_BATCH_SIZE
+          value: {{ ((((.Values.clusterEngine).policy).batch).redisPipelineBatchSize) | default "1000" | quote }}
+        - name: CACHE_CLEAR_BATCH_SIZE
+          value: {{ ((((.Values.clusterEngine).policy).batch).cacheClearBatchSize) | default "500" | quote }}
+
+        # Ingester configuration
+        - name: INGESTER_ENABLED
+          value: {{ (((.Values.clusterEngine).ingester).enabled) | default false | quote }}
+        {{- if ((.Values.clusterEngine).ingester).enabled }}
+        - name: INGESTER_PORT
+          value: {{ (((.Values.clusterEngine).ingester).port) | default "9443" | quote }}
+        {{- if (((.Values.clusterEngine).ingester).tls).enabled }}
+        - name: INGESTER_TLS_ENABLED
+          value: "true"
+        - name: INGESTER_TLS_CERT
+          value: {{ ((((.Values.clusterEngine).ingester).tls).certPath) | default "/etc/ingester-tls/tls.crt" | quote }}
+        - name: INGESTER_TLS_KEY
+          value: {{ ((((.Values.clusterEngine).ingester).tls).keyPath) | default "/etc/ingester-tls/tls.key" | quote }}
+        - name: INGESTER_TLS_USE_SYSTEM_CA
+          value: {{ ((((.Values.clusterEngine).ingester).tls).useSystemCA) | default false | quote }}
+        - name: INGESTER_SERVICE_NAME
+          value: {{ printf "%s-ingester" .Release.Name | quote }}
+        {{- with (((.Values.clusterEngine).ingester).tls).customCAConfigMap }}
+        - name: COLLECTOR_CA_CONFIGMAP
+          value: {{ .name | default "ingester-ca" | quote }}
+        {{- if .namespace }}
+        - name: COLLECTOR_CA_NAMESPACE
+          value: {{ .namespace | quote }}
+        {{- end }}
+        - name: COLLECTOR_CA_KEY
+          value: {{ .key | default "service-ca.crt" | quote }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
+
         {{- if (.Values.clusterEngine).extraEnv }}
         {{- toYaml (.Values.clusterEngine).extraEnv | nindent 8 }}
         {{- end }}
@@ -86,7 +132,12 @@ spec:
         - name: health
           containerPort: 8081
           protocol: TCP
-        
+        {{- if ((.Values.clusterEngine).ingester).enabled }}
+        - name: grpc
+          containerPort: {{ (((.Values.clusterEngine).ingester).port) | default 9443 }}
+          protocol: TCP
+        {{- end }}
+
         resources:
           requests:
             memory: {{ ((((.Values.clusterEngine).resources).requests).memory) | default "256Mi" }}
@@ -113,9 +164,16 @@ spec:
           timeoutSeconds: {{ ((((.Values.clusterEngine).probes).readiness).timeoutSeconds) | default 5 }}
           failureThreshold: {{ ((((.Values.clusterEngine).probes).readiness).failureThreshold) | default 3 }}
 
-        {{- if (.Values.clusterEngine).volumeMounts }}
+        {{- if or ((.Values.clusterEngine).volumeMounts) (and (((.Values.clusterEngine).ingester).enabled) ((((.Values.clusterEngine).ingester).tls).enabled)) }}
         volumeMounts:
+        {{- if and (((.Values.clusterEngine).ingester).enabled) ((((.Values.clusterEngine).ingester).tls).enabled) }}
+        - name: ingester-tls
+          mountPath: /etc/ingester-tls
+          readOnly: true
+        {{- end }}
+        {{- if (.Values.clusterEngine).volumeMounts }}
         {{- toYaml (.Values.clusterEngine).volumeMounts | nindent 8 }}
+        {{- end }}
         {{- end }}
       
       {{- if (.Values.clusterEngine).nodeSelector }}
@@ -133,7 +191,14 @@ spec:
         {{- toYaml (.Values.clusterEngine).affinity | nindent 8 }}
       {{- end }}
       
-      {{- if (.Values.clusterEngine).volumes }}
+      {{- if or ((.Values.clusterEngine).volumes) (and (((.Values.clusterEngine).ingester).enabled) ((((.Values.clusterEngine).ingester).tls).enabled)) }}
       volumes:
+      {{- if and (((.Values.clusterEngine).ingester).enabled) ((((.Values.clusterEngine).ingester).tls).enabled) }}
+      - name: ingester-tls
+        secret:
+          secretName: {{ ((((.Values.clusterEngine).ingester).tls).secretName) | default "ingester-serving-cert" }}
+      {{- end }}
+      {{- if (.Values.clusterEngine).volumes }}
         {{- toYaml (.Values.clusterEngine).volumes | nindent 8 }}
+      {{- end }}
       {{- end }}

@@ -13,32 +13,23 @@ spec:
         - default-group
       users:
         - default-user
-  operations:
-    audit:
-      logAccess: false
-      requireReason: false
   scope:
     clusters:
       default: none
       rules:
         - permissions:
             view: true
-            viewAuditInfo: true
-            viewCosts: true
-            viewMetadata: true
             viewMetrics: true
-            viewSecrets: true
-            viewSensitive: true
           resources:
-            namespaces:
+            - type: nodes
               visibility: all
-            nodes:
-              filters:
-                hideMasters: false
+            - type: operators
               visibility: all
-            operators:
-              visibility: none
-            pods:
+            - type: namespaces
+              visibility: all
+            - type: pods
+              visibility: all
+            - type: deployment-metrics
               visibility: all
           selector:
             matchPattern: .*
