@@ -1,9 +1,9 @@
 api:
-  image: quay.io/clusterpulse/api:v1.0.1
+  image: quay.io/clusterpulse/api:v1.0.2
 frontend:
-  image: quay.io/clusterpulse/ui:v1.0.1
+  image: quay.io/clusterpulse/ui:v1.0.2
 clusterEngine:
-  image: quay.io/clusterpulse/cluster-controller:v1.0.1
+  image: quay.io/clusterpulse/cluster-controller:v1.0.2
   ingester:
     enabled: false
 redis:
